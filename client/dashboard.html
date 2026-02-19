@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Placement Autofill</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .section { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
+        h3 { margin-top: 0; }
+        label { display: block; margin-top: 5px; }
+        input { margin-bottom: 5px; width: 100%; max-width: 300px; display: block; }
+        button { margin-top: 10px; cursor: pointer; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1>Placement Profile Dashboard</h1>
+        <button onclick="logout()">Logout</button>
+    </div>
+    
+    <p id="message"></p>
+
+    <form id="profileForm">
+        <div class="section">
+            <h3>Personal Details</h3>
+            <label>Name: <input type="text" id="name"></label>
+            <label>Email: <input type="email" id="email" disabled title="Cannot change email"></label>
+            <label>Phone: <input type="text" id="phone"></label>
+            <label>Gender: 
+                <select id="gender" style="width: 100%; max-width: 300px; padding: 5px; margin-bottom: 5px;">
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                </select>
+            </label>
+        </div>
+
+        <div class="section">
+            <h3>Education</h3>
+            <label>College Name: <input type="text" id="college_name"></label>
+            <label>Batch (Passing Year): <input type="text" id="batch" placeholder="e.g. 2024"></label>
+            <label>Program / Degree: <input type="text" id="program" placeholder="e.g. B.Tech"></label>
+            <label>Stream / Branch: <input type="text" id="stream" placeholder="e.g. CSE"></label>
+        </div>
+
+        <div class="section">
+            <h3>Academics</h3>
+            <label>10th Percentage: <input type="text" id="tenth_percentage"></label>
+            <label>12th Percentage: <input type="text" id="twelfth_percentage"></label>
+            <label>Graudation % (Agg): <input type="text" id="graduation_percentage"></label>
+            <label>CGPA: <input type="text" id="cgpa"></label>
+            <label>Active Backlogs: 
+                <select id="active_backlog" style="width: 100%; max-width: 300px; padding: 5px; margin-bottom: 5px;">
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                </select>
+            </label>
+            <label>Backlog Count: <input type="number" id="backlog_count" value="0"></label>
+        </div>
+
+        <div class="section">
+            <h3>College IDs</h3>
+            <label>UID: <input type="text" id="uid"></label>
+            <label>Roll Number: <input type="text" id="roll_number"></label>
+            <label>University Roll No: <input type="text" id="university_roll_number"></label>
+        </div>
+
+        <div class="section">
+            <h3>Placement</h3>
+            <label>Position Applying For: <input type="text" id="position_applying"></label>
+        </div>
+
+        <div class="section">
+            <h3>Links</h3>
+            <label>GitHub: <input type="text" id="github"></label>
+            <label>LinkedIn: <input type="text" id="linkedin"></label>
+            <label>Portfolio: <input type="text" id="portfolio"></label>
+        </div>
+
+        <button type="submit" style="padding: 10px 20px; font-size: 16px;">Save Profile</button>
+    </form>
+
+    <script src="api.js"></script>
+    <script>
+        const form = document.getElementById('profileForm');
+        const messageEl = document.getElementById('message');
+
+        // Load Profile on Load
+        async function loadProfile() {
+            if (!localStorage.getItem('token')) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            messageEl.textContent = 'Loading profile...';
+            const result = await apiRequest('/profile', 'GET');
+
+            if (result.data.success) {
+                const p = result.data.profile;
+                messageEl.textContent = '';
+                
+                // Personal
+                document.getElementById('name').value = p.personal?.name || '';
+                document.getElementById('email').value = p.personal?.email || '';
+                document.getElementById('phone').value = p.personal?.phone || '';
+                document.getElementById('gender').value = p.personal?.gender || '';
+
+                // Education
+                document.getElementById('college_name').value = p.education?.college_name || '';
+                document.getElementById('batch').value = p.education?.batch || '';
+                document.getElementById('program').value = p.education?.program || '';
+                document.getElementById('stream').value = p.education?.stream || '';
+
+                // Academics
+                document.getElementById('tenth_percentage').value = p.academics?.tenth_percentage || '';
+                document.getElementById('twelfth_percentage').value = p.academics?.twelfth_percentage || '';
+                document.getElementById('graduation_percentage').value = p.academics?.graduation_percentage || '';
+                document.getElementById('cgpa').value = p.academics?.cgpa || '';
+                document.getElementById('active_backlog').value = p.academics?.active_backlog || 'No';
+                document.getElementById('backlog_count').value = p.academics?.backlog_count || '0';
+
+                // IDs
+                document.getElementById('uid').value = p.ids?.uid || '';
+                document.getElementById('roll_number').value = p.ids?.roll_number || '';
+                document.getElementById('university_roll_number').value = p.ids?.university_roll_number || '';
+
+                // Placeemnt
+                document.getElementById('position_applying').value = p.placement?.position_applying || '';
+
+                // Links
+                document.getElementById('github').value = p.links?.github || '';
+                document.getElementById('linkedin').value = p.links?.linkedin || '';
+                document.getElementById('portfolio').value = p.links?.portfolio || '';
+
+            } else {
+                messageEl.textContent = 'Failed to load profile. ' + (result.data.message || '');
+                messageEl.className = 'error';
+                if (result.status === 401) logout();
+            }
+        }
+
+        // Update Profile
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            messageEl.textContent = 'Saving...';
+            messageEl.className = '';
+
+            const profileData = {
+                personal: {
+                    name: document.getElementById('name').value,
+                    phone: document.getElementById('phone').value,
+                    gender: document.getElementById('gender').value,
+                },
+                education: {
+                    college_name: document.getElementById('college_name').value,
+                    batch: document.getElementById('batch').value,
+                    program: document.getElementById('program').value,
+                    stream: document.getElementById('stream').value,
+                },
+                academics: {
+                    tenth_percentage: document.getElementById('tenth_percentage').value,
+                    twelfth_percentage: document.getElementById('twelfth_percentage').value,
+                    graduation_percentage: document.getElementById('graduation_percentage').value,
+                    cgpa: document.getElementById('cgpa').value,
+                    active_backlog: document.getElementById('active_backlog').value,
+                    backlog_count: document.getElementById('backlog_count').value,
+                },
+                ids: {
+                    uid: document.getElementById('uid').value,
+                    roll_number: document.getElementById('roll_number').value,
+                    university_roll_number: document.getElementById('university_roll_number').value,
+                },
+                placement: {
+                    position_applying: document.getElementById('position_applying').value,
+                },
+                links: {
+                    github: document.getElementById('github').value,
+                    linkedin: document.getElementById('linkedin').value,
+                    portfolio: document.getElementById('portfolio').value,
+                }
+            };
+
+            const result = await apiRequest('/profile', 'PUT', { profile: profileData });
+
+            if (result.data.success) {
+                messageEl.textContent = 'Profile saved successfully!';
+                messageEl.className = 'success';
+            } else {
+                messageEl.textContent = result.data.message || 'Update failed';
+                messageEl.className = 'error';
+            }
+        });
+
+        loadProfile();
+    </script>
+</body>
+</html>
