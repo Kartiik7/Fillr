@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://fillr-gqyp.onrender.com/api';
 
 async function apiRequest(endpoint, method = 'GET', body = null) {
     const headers = {
