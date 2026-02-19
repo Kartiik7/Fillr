@@ -1,6 +1,6 @@
 // const fetch = require('node-fetch'); // Using global fetch in Node.js 18+
 
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = 'https://fillr-gqyp.onrender.com/api';
 const EMAIL = `user${Date.now()}@test.com`;
 const PASSWORD = 'password123';
 

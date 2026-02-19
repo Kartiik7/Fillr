@@ -18,6 +18,7 @@ const userSchema = new mongoose.Schema({
       twelfth_percentage: { type: String, default: '' },
       cgpa: { type: String, default: '' },
       graduation_percentage: { type: String, default: '' },
+      pg_percentage: { type: String, default: '' },
       active_backlog: { type: String, default: 'No' }, // Yes/No
       backlog_count: { type: String, default: '0' },
     },
