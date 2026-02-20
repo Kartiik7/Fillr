@@ -49,6 +49,14 @@
         <span id="authErrorText"></span>
       </div>
 
+      <!-- Success banner (e.g. after account deletion) -->
+      <div class="auth-success" id="authSuccess" role="status">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        <span id="authSuccessText"></span>
+      </div>
+
       <form id="loginForm" novalidate>
 
         <!-- Email -->
@@ -106,11 +114,26 @@
     </p>
   </div>
 
+  <div class="legal-footer-bar">
+    <a href="terms.html">Terms &amp; Conditions</a>
+    <a href="privacy.html">Privacy Policy</a>
+  </div>
+
   <script src="api.js"></script>
   <script>
     // Redirect if already logged in
     if (localStorage.getItem('token')) {
       window.location.href = 'dashboard.html';
+    }
+
+    // Show success banner when redirected after account deletion
+    if (new URLSearchParams(window.location.search).get('deleted') === '1') {
+      const s = document.getElementById('authSuccess');
+      document.getElementById('authSuccessText').textContent =
+        'Your account has been permanently deleted. Sorry to see you go.';
+      s.classList.add('show');
+      // Clean up URL without reloading
+      history.replaceState(null, '', window.location.pathname);
     }
 
     // Password toggle

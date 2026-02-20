@@ -1,388 +1,856 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Fillr</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Fillr</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="dashboard.css">
 </head>
-<body class="dashboard-body">
-    <div class="header">
-        <h1>Placement Profile Dashboard</h1>
-        <button onclick="logout()">Logout</button>
-    </div>
-    <p id="message"></p>
+<body>
 
+  <!-- ── Toast ─────────────────────────────────────────────── -->
+  <div class="db-toast" id="toast">
+    <span class="toast-icon" id="toastIcon"></span>
+    <span id="toastMsg"></span>
+  </div>
+
+  <!-- ── Nav ───────────────────────────────────────────────── -->
+  <nav class="db-nav">
+    <div class="db-nav-inner">
+      <a class="db-brand" href="#">Fillr<span class="dot">.</span><span class="tag">beta</span></a>
+      <div class="db-user">
+        <button class="db-user-btn" id="userMenuBtn" aria-label="User menu">
+          <span class="db-avatar" id="navAvatar">?</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="db-user-menu" id="userMenu">
+          <div class="db-user-menu-email" id="menuEmail">—</div>
+          <hr>
+          <button class="logout-btn" onclick="logout()">Sign out</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Hero / Progress ───────────────────────────────────── -->
+  <div class="db-hero">
+    <div class="db-hero-inner">
+      <div class="db-hero-meta">
+        <div class="db-avatar-lg" id="heroAvatar">?</div>
+        <div>
+          <div class="db-hero-name" id="heroName">—</div>
+          <div class="db-hero-email" id="heroEmail">—</div>
+        </div>
+      </div>
+      <div class="db-progress">
+        <div class="db-progress-meta">
+          <span>Profile completion</span>
+          <span id="progressPct">0%</span>
+        </div>
+        <div class="db-progress-track">
+          <div class="db-progress-fill" id="progressFill" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Main ──────────────────────────────────────────────── -->
+  <main class="db-main">
     <form id="profileForm" novalidate>
 
-        <!-- ========== PERSONAL DETAILS ========== -->
-        <div class="section">
-            <h3>Personal Details</h3>
-            <div class="field-grid">
-                <div class="field">
-                    <label for="uid">UID / Roll No <span class="req">*</span></label>
-                    <input type="text" id="uid" required>
-                </div>
-                <div class="field">
-                    <label for="name">Full Name <span class="req">*</span></label>
-                    <input type="text" id="name" required>
-                </div>
-                <div class="field">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" disabled title="Cannot change email">
-                </div>
-                <div class="field">
-                    <label for="phone">Phone Number</label>
-                    <input type="tel" id="phone" pattern="[0-9]{10}" maxlength="10" placeholder="10 digits">
-                </div>
-                <div class="field">
-                    <label for="dob">Date of Birth</label>
-                    <input type="date" id="dob">
-                </div>
-                <div class="field">
-                    <label for="age">Age (Years)</label>
-                    <input type="number" id="age" min="0" max="100" step="1">
-                </div>
-                <div class="field">
-                    <label for="gender">Gender</label>
-                    <select id="gender">
-                        <option value="">Select Gender</option>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-                <div class="field" style="grid-column: 1 / -1;">
-                    <label for="permanent_address">Permanent Address</label>
-                    <textarea id="permanent_address" rows="2" placeholder="Full permanent address"></textarea>
-                </div>
+      <!-- Card: Personal -->
+      <div class="db-card is-open" id="card-personal">
+        <div class="db-card-hdr" data-target="card-personal">
+          <div class="db-card-hdr-left">
+            <span class="db-card-icon">👤</span>
+            <div>
+              <div class="db-card-title">Personal Information</div>
+              <div class="db-card-summary">Name, contact, identity and address details</div>
             </div>
+          </div>
+          <div class="db-card-hdr-right">
+            <span class="db-card-badge" id="badge-personal">0 / 7</span>
+            <svg class="db-card-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
         </div>
-
-        <!-- ========== ACADEMIC DETAILS ========== -->
-        <div class="section">
-            <h3>Academic Details</h3>
-            <div class="field-grid">
-                <div class="field">
-                    <label for="tenth_percentage">10th Percentage</label>
-                    <input type="number" id="tenth_percentage" min="0" max="100" step="0.01" placeholder="e.g. 85.50">
-                </div>
-                <div class="field">
-                    <label for="twelfth_percentage">12th Percentage</label>
-                    <input type="number" id="twelfth_percentage" min="0" max="100" step="0.01" placeholder="e.g. 78.20">
-                </div>
-                <div class="field">
-                    <label for="diploma_percentage">Diploma Percentage</label>
-                    <input type="number" id="diploma_percentage" min="0" max="100" step="0.01" placeholder="e.g. 72.00">
-                </div>
-                <div class="field">
-                    <label for="graduation_percentage">Graduation % (Aggregate)</label>
-                    <input type="number" id="graduation_percentage" min="0" max="100" step="0.01" placeholder="e.g. 80.00">
-                </div>
-                <div class="field">
-                    <label for="pg_percentage">PG Percentage</label>
-                    <input type="number" id="pg_percentage" min="0" max="100" step="0.01" placeholder="e.g. 75.00">
-                </div>
-                <div class="field">
-                    <label for="cgpa">CGPA</label>
-                    <input type="number" id="cgpa" min="0" max="10" step="0.01" placeholder="e.g. 8.50">
-                </div>
-                <div class="field">
-                    <label for="active_backlog">Active Backlog</label>
-                    <select id="active_backlog">
-                        <option value="No">No</option>
-                        <option value="Yes">Yes</option>
-                    </select>
-                </div>
-                <div class="field">
-                    <label for="backlog_count">Backlog Count</label>
-                    <select id="backlog_count">
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5+">5+</option>
-                    </select>
-                </div>
-                <div class="field">
-                    <label for="gap_months">Gap in Education (Months)</label>
-                    <input type="number" id="gap_months" min="0" max="120" step="1" value="0">
-                </div>
+        <div class="db-card-body">
+          <div class="db-card-body-inner">
+            <div class="db-field-grid cols-3">
+              <!-- UID -->
+              <div class="db-fl">
+                <input class="db-fl-input" type="text" id="uid" name="uid" placeholder=" " autocomplete="off">
+                <label class="db-fl-label" for="uid">University / College ID <span style="color:var(--danger)">*</span></label>
+                <div class="db-fl-bar"></div>
+                <div class="db-fl-error" id="uid-err"></div>
+              </div>
+              <!-- Full name -->
+              <div class="db-fl">
+                <input class="db-fl-input" type="text" id="name" name="name" placeholder=" " autocomplete="name">
+                <label class="db-fl-label" for="name">Full Name <span style="color:var(--danger)">*</span></label>
+                <div class="db-fl-bar"></div>
+                <div class="db-fl-error" id="name-err"></div>
+              </div>
+              <!-- Email (read-only) -->
+              <div class="db-fl">
+                <input class="db-fl-input" type="email" id="email" name="email" placeholder=" " disabled>
+                <label class="db-fl-label" for="email">Email Address</label>
+                <div class="db-fl-bar"></div>
+              </div>
+              <!-- Phone -->
+              <div class="db-fl">
+                <input class="db-fl-input" type="tel" id="phone" name="phone" placeholder=" " maxlength="10" autocomplete="tel">
+                <label class="db-fl-label" for="phone">Phone Number</label>
+                <div class="db-fl-bar"></div>
+                <div class="db-fl-error" id="phone-err"></div>
+              </div>
+              <!-- Date of Birth -->
+              <div class="db-fl">
+                <input class="db-fl-input" type="date" id="dob" name="dob" placeholder=" ">
+                <label class="db-fl-label" for="dob">Date of Birth</label>
+                <div class="db-fl-bar"></div>
+              </div>
+              <!-- Age -->
+              <div class="db-fl">
+                <input class="db-fl-input" type="number" id="age" name="age" placeholder=" " min="15" max="60">
+                <label class="db-fl-label" for="age">Age</label>
+                <div class="db-fl-bar"></div>
+              </div>
+              <!-- Gender -->
+              <div class="db-fl">
+                <select class="db-fl-select" id="gender" name="gender" onchange="syncSelectLabel(this)">
+                  <option value=""></option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                  <option value="Prefer not to say">Prefer not to say</option>
+                </select>
+                <label class="db-fl-label" for="gender">Gender</label>
+                <div class="db-fl-bar"></div>
+              </div>
+              <!-- Address -->
+              <div class="db-fl db-col-full">
+                <textarea class="db-fl-textarea" id="permanent_address" name="permanent_address" placeholder=" " rows="2"></textarea>
+                <label class="db-fl-label" for="permanent_address">Permanent Address</label>
+                <div class="db-fl-bar"></div>
+              </div>
             </div>
+          </div>
         </div>
+      </div>
 
-        <!-- ========== EDUCATION DETAILS ========== -->
-        <div class="section">
-            <h3>Education Details</h3>
-            <div class="field-grid">
-                <div class="field">
-                    <label for="college_name">College Name</label>
-                    <input type="text" id="college_name" placeholder="e.g. Chandigarh University">
-                </div>
-                <div class="field">
-                    <label for="program">Program / Degree</label>
-                    <select id="program">
-                        <option value="">Select Program</option>
-                        <option value="B.Tech">B.Tech</option>
-                        <option value="BE">BE</option>
-                        <option value="M.Tech">M.Tech</option>
-                        <option value="MCA">MCA</option>
-                        <option value="BCA">BCA</option>
-                        <option value="MBA">MBA</option>
-                        <option value="B.Sc">B.Sc</option>
-                        <option value="M.Sc">M.Sc</option>
-                    </select>
-                </div>
-                <div class="field">
-                    <label for="stream">Stream / Branch</label>
-                    <select id="stream">
-                        <option value="">Select Stream</option>
-                        <option value="CSE">CSE</option>
-                        <option value="IT">IT</option>
-                        <option value="AIML">AIML</option>
-                        <option value="BDA">BDA</option>
-                        <option value="IoT">IoT</option>
-                        <option value="CC">CC</option>
-                        <option value="GG">GG</option>
-                        <option value="CSBS">CSBS</option>
-                        <option value="IS">IS</option>
-                        <option value="Blockchain">Blockchain</option>
-                        <option value="Devops">Devops</option>
-                        <option value="ME">ME</option>
-                        <option value="CE">CE</option>
-                        <option value="ECE">ECE</option>
-                    </select>
-                </div>
-                <div class="field">
-                    <label for="batch">Batch (Passing Year)</label>
-                    <select id="batch">
-                        <option value="">Select Year</option>
-                        <option value="2023">2023</option>
-                        <option value="2024">2024</option>
-                        <option value="2025">2025</option>
-                        <option value="2026">2026</option>
-                        <option value="2027">2027</option>
-                        <option value="2028">2028</option>
-                        <option value="2029">2029</option>
-                    </select>
-                </div>
+      <!-- Card: Academic -->
+      <div class="db-card" id="card-academic">
+        <div class="db-card-hdr" data-target="card-academic">
+          <div class="db-card-hdr-left">
+            <span class="db-card-icon">📚</span>
+            <div>
+              <div class="db-card-title">Academic Records</div>
+              <div class="db-card-summary">School, graduation and post-graduation percentages</div>
             </div>
+          </div>
+          <div class="db-card-hdr-right">
+            <span class="db-card-badge" id="badge-academic">0 / 6</span>
+            <svg class="db-card-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
         </div>
-
-        <!-- ========== PLACEMENT DETAILS ========== -->
-        <div class="section">
-            <h3>Placement Details</h3>
-            <div class="field-grid">
-                <div class="field">
-                    <label for="position_applying">Position Applying For</label>
-                    <input type="text" id="position_applying" placeholder="e.g. SDE, Data Analyst">
+        <div class="db-card-body">
+          <div class="db-card-body-inner">
+            <!-- Sub-group: School -->
+            <div class="db-group">
+              <div class="db-group-label">School Qualifications</div>
+              <div class="db-field-grid cols-3">
+                <div class="db-fl">
+                  <input class="db-fl-input" type="number" id="tenth_percentage" name="tenth_percentage" placeholder=" " min="0" max="100" step="0.01">
+                  <label class="db-fl-label" for="tenth_percentage">10th Percentage</label>
+                  <div class="db-fl-bar"></div>
+                  <div class="db-fl-suffix">%</div>
+                  <div class="db-fl-error" id="tenth_percentage-err"></div>
                 </div>
-                <div class="field">
-                    <label for="github">GitHub</label>
-                    <input type="url" id="github" placeholder="https://github.com/username">
+                <div class="db-fl">
+                  <input class="db-fl-input has-suffix" type="number" id="twelfth_percentage" name="twelfth_percentage" placeholder=" " min="0" max="100" step="0.01">
+                  <label class="db-fl-label" for="twelfth_percentage">12th Percentage</label>
+                  <div class="db-fl-bar"></div>
+                  <div class="db-fl-suffix">%</div>
+                  <div class="db-fl-error" id="twelfth_percentage-err"></div>
                 </div>
-                <div class="field">
-                    <label for="linkedin">LinkedIn</label>
-                    <input type="url" id="linkedin" placeholder="https://linkedin.com/in/username">
+                <div class="db-fl">
+                  <input class="db-fl-input has-suffix" type="number" id="diploma_percentage" name="diploma_percentage" placeholder=" " min="0" max="100" step="0.01">
+                  <label class="db-fl-label" for="diploma_percentage">Diploma Percentage</label>
+                  <div class="db-fl-bar"></div>
+                  <div class="db-fl-suffix">%</div>
+                  <div class="db-fl-error" id="diploma_percentage-err"></div>
                 </div>
-                <div class="field">
-                    <label for="portfolio">Portfolio</label>
-                    <input type="url" id="portfolio" placeholder="https://yourportfolio.com">
-                </div>
+              </div>
             </div>
+            <!-- Sub-group: Graduation -->
+            <div class="db-group">
+              <div class="db-group-label">Graduation</div>
+              <div class="db-field-grid cols-3">
+                <div class="db-fl">
+                  <input class="db-fl-input has-suffix" type="number" id="graduation_percentage" name="graduation_percentage" placeholder=" " min="0" max="100" step="0.01">
+                  <label class="db-fl-label" for="graduation_percentage">Graduation Percentage</label>
+                  <div class="db-fl-bar"></div>
+                  <div class="db-fl-suffix">%</div>
+                  <div class="db-fl-error" id="graduation_percentage-err"></div>
+                </div>
+                <div class="db-fl">
+                  <input class="db-fl-input" type="number" id="cgpa" name="cgpa" placeholder=" " min="0" max="10" step="0.01">
+                  <label class="db-fl-label" for="cgpa">CGPA (out of 10)</label>
+                  <div class="db-fl-bar"></div>
+                  <div class="db-fl-error" id="cgpa-err"></div>
+                </div>
+              </div>
+            </div>
+            <!-- Sub-group: PG -->
+            <div class="db-group">
+              <div class="db-group-label">Post Graduation</div>
+              <div class="db-field-grid cols-3">
+                <div class="db-fl">
+                  <input class="db-fl-input has-suffix" type="number" id="pg_percentage" name="pg_percentage" placeholder=" " min="0" max="100" step="0.01">
+                  <label class="db-fl-label" for="pg_percentage">PG Percentage</label>
+                  <div class="db-fl-bar"></div>
+                  <div class="db-fl-suffix">%</div>
+                  <div class="db-fl-error" id="pg_percentage-err"></div>
+                </div>
+              </div>
+            </div>
+            <!-- Sub-group: Backlogs -->
+            <div class="db-group">
+              <div class="db-group-label">Backlogs &amp; Gap</div>
+              <div class="db-field-grid cols-3">
+                <div class="db-fl">
+                  <select class="db-fl-select" id="active_backlog" name="active_backlog" onchange="syncSelectLabel(this)">
+                    <option value=""></option>
+                    <option value="true">Yes</option>
+                    <option value="false">No</option>
+                  </select>
+                  <label class="db-fl-label" for="active_backlog">Active Backlog?</label>
+                  <div class="db-fl-bar"></div>
+                </div>
+                <div class="db-fl">
+                  <select class="db-fl-select" id="backlog_count" name="backlog_count" onchange="syncSelectLabel(this)">
+                    <option value=""></option>
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5+</option>
+                  </select>
+                  <label class="db-fl-label" for="backlog_count">Backlog Count</label>
+                  <div class="db-fl-bar"></div>
+                </div>
+                <div class="db-fl">
+                  <select class="db-fl-select" id="gap_months" name="gap_months" onchange="syncSelectLabel(this)">
+                    <option value=""></option>
+                    <option value="0">0 months</option>
+                    <option value="1">1 month</option>
+                    <option value="2">2 months</option>
+                    <option value="3">3 months</option>
+                    <option value="6">6 months</option>
+                    <option value="12">12 months</option>
+                    <option value="24">24+ months</option>
+                  </select>
+                  <label class="db-fl-label" for="gap_months">Gap (months)</label>
+                  <div class="db-fl-bar"></div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <button type="submit" class="btn-save">Save Profile</button>
+      <!-- Card: Education -->
+      <div class="db-card" id="card-education">
+        <div class="db-card-hdr" data-target="card-education">
+          <div class="db-card-hdr-left">
+            <span class="db-card-icon">🏫</span>
+            <div>
+              <div class="db-card-title">Education Details</div>
+              <div class="db-card-summary">College, program, stream and batch</div>
+            </div>
+          </div>
+          <div class="db-card-hdr-right">
+            <span class="db-card-badge" id="badge-education">0 / 4</span>
+            <svg class="db-card-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+        <div class="db-card-body">
+          <div class="db-card-body-inner">
+            <div class="db-field-grid cols-3">
+              <div class="db-fl db-col-full">
+                <input class="db-fl-input" type="text" id="college_name" name="college_name" placeholder=" " autocomplete="off">
+                <label class="db-fl-label" for="college_name">College / University Name</label>
+                <div class="db-fl-bar"></div>
+              </div>
+              <div class="db-fl">
+                <select class="db-fl-select" id="program" name="program" onchange="syncSelectLabel(this)">
+                  <option value=""></option>
+                  <option value="B.Tech">B.Tech</option>
+                  <option value="B.E.">B.E.</option>
+                  <option value="BCA">BCA</option>
+                  <option value="BCS">BCS</option>
+                  <option value="MCA">MCA</option>
+                  <option value="M.Tech">M.Tech</option>
+                  <option value="MBA">MBA</option>
+                  <option value="B.Sc">B.Sc</option>
+                  <option value="M.Sc">M.Sc</option>
+                  <option value="Other">Other</option>
+                </select>
+                <label class="db-fl-label" for="program">Program / Degree</label>
+                <div class="db-fl-bar"></div>
+              </div>
+              <div class="db-fl">
+                <select class="db-fl-select" id="stream" name="stream" onchange="syncSelectLabel(this)">
+                  <option value=""></option>
+                  <option value="Computer Science">Computer Science</option>
+                  <option value="Information Technology">Information Technology</option>
+                  <option value="Electronics">Electronics</option>
+                  <option value="Mechanical">Mechanical</option>
+                  <option value="Civil">Civil</option>
+                  <option value="Electrical">Electrical</option>
+                  <option value="Chemical">Chemical</option>
+                  <option value="Other">Other</option>
+                </select>
+                <label class="db-fl-label" for="stream">Branch / Stream</label>
+                <div class="db-fl-bar"></div>
+              </div>
+              <div class="db-fl">
+                <select class="db-fl-select" id="batch" name="batch" onchange="syncSelectLabel(this)">
+                  <option value=""></option>
+                  <option value="2023">2023</option>
+                  <option value="2024">2024</option>
+                  <option value="2025">2025</option>
+                  <option value="2026">2026</option>
+                  <option value="2027">2027</option>
+                  <option value="2028">2028</option>
+                </select>
+                <label class="db-fl-label" for="batch">Graduation Batch</label>
+                <div class="db-fl-bar"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card: Placement & Links -->
+      <div class="db-card" id="card-placement">
+        <div class="db-card-hdr" data-target="card-placement">
+          <div class="db-card-hdr-left">
+            <span class="db-card-icon">🔗</span>
+            <div>
+              <div class="db-card-title">Placement &amp; Links</div>
+              <div class="db-card-summary">Job preferences and professional profiles</div>
+            </div>
+          </div>
+          <div class="db-card-hdr-right">
+            <span class="db-card-badge" id="badge-placement">0 / 4</span>
+            <svg class="db-card-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+        <div class="db-card-body">
+          <div class="db-card-body-inner">
+            <div class="db-field-grid cols-3">
+              <div class="db-fl db-col-full">
+                <select class="db-fl-select" id="position_applying" name="position_applying" onchange="syncSelectLabel(this)">
+                  <option value=""></option>
+                  <option value="Software Engineer">Software Engineer</option>
+                  <option value="Data Analyst">Data Analyst</option>
+                  <option value="Data Scientist">Data Scientist</option>
+                  <option value="Product Manager">Product Manager</option>
+                  <option value="UI/UX Designer">UI/UX Designer</option>
+                  <option value="DevOps Engineer">DevOps Engineer</option>
+                  <option value="Business Analyst">Business Analyst</option>
+                  <option value="QA Engineer">QA Engineer</option>
+                  <option value="Cloud Engineer">Cloud Engineer</option>
+                  <option value="Cybersecurity Analyst">Cybersecurity Analyst</option>
+                  <option value="ML Engineer">ML Engineer</option>
+                  <option value="Full Stack Developer">Full Stack Developer</option>
+                  <option value="Other">Other</option>
+                </select>
+                <label class="db-fl-label" for="position_applying">Position Applying For</label>
+                <div class="db-fl-bar"></div>
+              </div>
+              <div class="db-fl">
+                <input class="db-fl-input" type="url" id="github" name="github" placeholder=" ">
+                <label class="db-fl-label" for="github">GitHub Profile URL</label>
+                <div class="db-fl-bar"></div>
+                <div class="db-fl-url">github.com/username</div>
+                <div class="db-fl-error" id="github-err"></div>
+              </div>
+              <div class="db-fl">
+                <input class="db-fl-input" type="url" id="linkedin" name="linkedin" placeholder=" ">
+                <label class="db-fl-label" for="linkedin">LinkedIn Profile URL</label>
+                <div class="db-fl-bar"></div>
+                <div class="db-fl-url">linkedin.com/in/username</div>
+                <div class="db-fl-error" id="linkedin-err"></div>
+              </div>
+              <div class="db-fl db-col-full">
+                <input class="db-fl-input" type="url" id="portfolio" name="portfolio" placeholder=" ">
+                <label class="db-fl-label" for="portfolio">Portfolio / Website URL</label>
+                <div class="db-fl-bar"></div>
+                <div class="db-fl-error" id="portfolio-err"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Save Bar -->
+      <div class="db-save-bar">
+        <button class="db-save-btn" type="submit" id="saveBtn" disabled>
+          <span class="sp" id="saveSpinner"></span>
+          <span class="btn-label" id="saveBtnLabel">Save Changes</span>
+        </button>
+        <span class="db-save-hint" id="saveHint">No unsaved changes</span>
+      </div>
+
     </form>
 
-    <script src="api.js"></script>
-    <script>
-        const form = document.getElementById('profileForm');
-        const messageEl = document.getElementById('message');
+    <!-- Danger Zone ──────────────────────────── -->
+    <div class="db-danger-zone">
+      <div>
+        <div class="db-danger-title">⚠️ Danger Zone</div>
+        <p class="db-danger-desc">Permanently delete your account and all associated data.<br>This action <strong>cannot be undone</strong>.</p>
+      </div>
+      <button class="db-danger-btn" id="openDeleteModal" type="button">Delete My Account</button>
+    </div>
 
-        // ============ VALIDATION ============
-        function validateForm() {
-            let valid = true;
-            const errors = [];
+  </main>
 
-            // Clear previous invalid states
-            document.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid'));
+  <!-- Delete Account Modal ──────────────────── -->
+  <div class="db-modal-backdrop" id="deleteModalBackdrop" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+    <div class="db-modal">
+      <div class="db-modal-header">
+        <span class="db-modal-icon">🗑</span>
+        <h2 id="deleteModalTitle">Delete Account</h2>
+      </div>
+      <p class="db-modal-desc">
+        This will <strong>permanently delete</strong> your account and all personal data stored by
+        Fillr. Once confirmed, recovery is impossible.
+      </p>
+      <!-- Floating-label password field (matches dashboard style) -->
+      <div class="db-fl" style="margin: 20px 0 4px;">
+        <input class="db-fl-input" type="password" id="deletePassword" placeholder=" " autocomplete="current-password">
+        <label class="db-fl-label" for="deletePassword">Confirm your password</label>
+        <div class="db-fl-bar"></div>
+      </div>
+      <div class="db-modal-err" id="deleteErr" aria-live="polite"></div>
+      <div class="db-modal-actions">
+        <button class="db-modal-cancel" id="cancelDelete" type="button">Cancel</button>
+        <button class="db-modal-confirm" id="confirmDelete" type="button">Delete Permanently</button>
+      </div>
+    </div>
+  </div>
 
-            // Required fields
-            const requiredFields = [
-                { id: 'uid', label: 'UID' },
-                { id: 'name', label: 'Full Name' },
-            ];
-            requiredFields.forEach(({ id, label }) => {
-                const el = document.getElementById(id);
-                if (!el.value.trim()) {
-                    el.classList.add('invalid');
-                    errors.push(`${label} is required`);
-                    valid = false;
-                }
-            });
+  <div class="db-legal-footer">
+    <a href="terms.html">Terms &amp; Conditions</a>
+    <a href="privacy.html">Privacy Policy</a>
+  </div>
 
-            // Numeric percentage fields (must be valid number 0-100 if filled)
-            const pctFields = ['tenth_percentage', 'twelfth_percentage', 'diploma_percentage', 'graduation_percentage', 'pg_percentage'];
-            pctFields.forEach(id => {
-                const el = document.getElementById(id);
-                const val = el.value.trim();
-                if (val !== '' && (isNaN(parseFloat(val)) || parseFloat(val) < 0 || parseFloat(val) > 100)) {
-                    el.classList.add('invalid');
-                    errors.push(`${id.replace(/_/g, ' ')} must be a number between 0 and 100`);
-                    valid = false;
-                }
-            });
+  <script>
+  /* ── Helpers ─────────────────────────────────────────────── */
+  const API_URL = 'https://fillr-gqyp.onrender.com/api';
+  const $ = id => document.getElementById(id);
+  const v = id => ($(''+id)?.value || '').trim();
 
-            // CGPA (0-10)
-            const cgpaEl = document.getElementById('cgpa');
-            const cgpaVal = cgpaEl.value.trim();
-            if (cgpaVal !== '' && (isNaN(parseFloat(cgpaVal)) || parseFloat(cgpaVal) < 0 || parseFloat(cgpaVal) > 10)) {
-                cgpaEl.classList.add('invalid');
-                errors.push('CGPA must be a number between 0 and 10');
-                valid = false;
-            }
+  function showToast(msg, type = 'success') {
+    const t = $('toast');
+    $('toastMsg').textContent = msg;
+    $('toastIcon').textContent = type === 'success' ? '✓' : '✕';
+    t.className = 'db-toast show toast-' + type;
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => { t.className = 'db-toast'; }, 3600);
+  }
 
-            // Age (numeric, 0-100)
-            const ageEl = document.getElementById('age');
-            const ageVal = ageEl.value.trim();
-            if (ageVal !== '' && (isNaN(parseInt(ageVal)) || parseInt(ageVal) < 0 || parseInt(ageVal) > 100)) {
-                ageEl.classList.add('invalid');
-                errors.push('Age must be a number between 0 and 100');
-                valid = false;
-            }
+  /* ── Card toggle ─────────────────────────────────────────── */
+  document.querySelectorAll('.db-card-hdr').forEach(hdr => {
+    hdr.addEventListener('click', () => {
+      const card = document.getElementById(hdr.dataset.target);
+      if (card) card.classList.toggle('is-open');
+    });
+  });
 
-            // Gap months (numeric, 0-120)
-            const gapEl = document.getElementById('gap_months');
-            const gapVal = gapEl.value.trim();
-            if (gapVal !== '' && (isNaN(parseInt(gapVal)) || parseInt(gapVal) < 0)) {
-                gapEl.classList.add('invalid');
-                errors.push('Gap months must be a valid number');
-                valid = false;
-            }
+  function openCard(fieldId) {
+    const field = $(fieldId);
+    if (!field) return;
+    const card = field.closest('.db-card');
+    if (card) card.classList.add('is-open');
+  }
 
-            if (!valid) {
-                messageEl.textContent = errors[0]; // Show first error
-                messageEl.className = 'error';
-            }
-            return valid;
+  /* ── User menu ───────────────────────────────────────────── */
+  $('userMenuBtn').addEventListener('click', e => {
+    e.stopPropagation();
+    $('userMenu').classList.toggle('open');
+  });
+  document.addEventListener('click', () => $('userMenu').classList.remove('open'));
+
+  /* ── Auth / Logout ───────────────────────────────────────── */
+  function logout() {
+    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
+    window.location.href = 'login.html';
+  }
+
+  /* ── Select floating label sync ──────────────────────────── */
+  function syncSelectLabel(sel) {
+    sel.closest('.db-fl').classList.toggle('has-value', sel.value !== '');
+  }
+
+  /* ── Dirty tracking ──────────────────────────────────────── */
+  const ALL_FIELDS = [
+    'uid','name','phone','dob','age','gender','permanent_address',
+    'tenth_percentage','twelfth_percentage','diploma_percentage',
+    'graduation_percentage','cgpa','pg_percentage',
+    'active_backlog','backlog_count','gap_months',
+    'college_name','program','stream','batch',
+    'position_applying','github','linkedin','portfolio'
+  ];
+
+  let _snapshot = '';
+
+  function getSnapshot() {
+    return ALL_FIELDS.map(id => v(id)).join('|');
+  }
+
+  function setDirty(dirty) {
+    $('saveBtn').disabled = !dirty;
+    const hint = $('saveHint');
+    hint.textContent = dirty ? 'You have unsaved changes' : 'No unsaved changes';
+    hint.style.color = dirty ? 'var(--amber)' : 'var(--muted)';
+  }
+
+  function checkDirty() {
+    setDirty(getSnapshot() !== _snapshot);
+    updateCompletion();
+  }
+
+  ALL_FIELDS.forEach(id => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', checkDirty);
+  });
+
+  /* ── Completion calc ─────────────────────────────────────── */
+  const COMPLETION_FIELDS = [
+    'uid','name','phone','gender','dob',
+    'tenth_percentage','twelfth_percentage','graduation_percentage','cgpa',
+    'college_name','batch','program','stream','position_applying'
+  ];
+
+  const CARD_FIELDS = {
+    personal:   ['uid','name','phone','gender','dob','age','permanent_address'],
+    academic:   ['tenth_percentage','twelfth_percentage','graduation_percentage','cgpa','pg_percentage','gap_months'],
+    education:  ['college_name','program','stream','batch'],
+    placement:  ['position_applying','github','linkedin','portfolio']
+  };
+
+  function fieldFilled(id) {
+    const val = v(id);
+    return val !== '' && val !== '0' && val !== 'false';
+  }
+
+  function updateCompletion() {
+    const filled = COMPLETION_FIELDS.filter(fieldFilled).length;
+    const pct = Math.round((filled / COMPLETION_FIELDS.length) * 100);
+    $('progressFill').style.width = pct + '%';
+    $('progressFill').classList.toggle('complete', pct === 100);
+    $('progressPct').textContent = pct + '%';
+
+    // Per-card badges
+    Object.entries(CARD_FIELDS).forEach(([card, fields]) => {
+      const done = fields.filter(fieldFilled).length;
+      const badge = $('badge-' + card);
+      if (!badge) return;
+      badge.textContent = done + ' / ' + fields.length;
+      badge.className = 'db-card-badge' + (done === fields.length ? ' complete' : done > 0 ? ' partial' : '');
+    });
+
+    // Hero name + avatar
+    const nm = v('name') || '—';
+    $('heroName').textContent = nm;
+    const initials = nm.split(' ').filter(Boolean).slice(0,2).map(w => w[0].toUpperCase()).join('');
+    $('heroAvatar').textContent = initials || '?';
+    $('navAvatar').textContent = (initials || '?')[0];
+  }
+
+  /* ── Validation ──────────────────────────────────────────── */
+  function setFieldError(id, msg) {
+    const el = $(id);
+    if (!el) return;
+    el.classList.add('is-error');
+    el.classList.remove('is-valid');
+    const err = $(id + '-err');
+    if (err) { err.textContent = msg; err.style.display = 'block'; }
+    el.animate([{transform:'translateX(-4px)'},{transform:'translateX(4px)'},{transform:'translateX(0)'}],
+      {duration: 320, iterations: 2});
+  }
+
+  function clearFieldError(id) {
+    const el = $(id);
+    if (!el) return;
+    el.classList.remove('is-error');
+    const err = $(id + '-err');
+    if (err) { err.textContent = ''; err.style.display = 'none'; }
+  }
+
+  function setFieldValid(id) {
+    const el = $(id);
+    if (!el) return;
+    el.classList.remove('is-error');
+    el.classList.add('is-valid');
+  }
+
+  function validateAll() {
+    let ok = true;
+    ALL_FIELDS.forEach(id => clearFieldError(id));
+
+    function require(id, msg) {
+      if (!fieldFilled(id)) { setFieldError(id, msg || 'Required'); openCard(id); ok = false; }
+      else setFieldValid(id);
+    }
+
+    function range(id, min, max, label) {
+      const val = parseFloat(v(id));
+      if (v(id) === '') return;
+      if (isNaN(val) || val < min || val > max) {
+        setFieldError(id, `${label} must be ${min}–${max}`);
+        openCard(id); ok = false;
+      } else setFieldValid(id);
+    }
+
+    function urlCheck(id) {
+      const el = $(id);
+      if (!el || !v(id)) return;
+      // Auto-prepend https:// if no protocol present
+      if (!v(id).startsWith('http://') && !v(id).startsWith('https://')) {
+        el.value = 'https://' + v(id);
+      }
+      setFieldValid(id);
+    }
+
+    require('uid', 'College/University ID is required');
+    require('name', 'Full name is required');
+
+    if (v('phone') && !/^\d{10}$/.test(v('phone'))) {
+      setFieldError('phone', 'Must be exactly 10 digits');
+      openCard('phone'); ok = false;
+    } else if (v('phone')) setFieldValid('phone');
+
+    ['tenth_percentage','twelfth_percentage','diploma_percentage',
+     'graduation_percentage','pg_percentage'].forEach(id => range(id, 0, 100, 'Percentage'));
+    range('cgpa', 0, 10, 'CGPA');
+
+    urlCheck('github');
+    urlCheck('linkedin');
+    urlCheck('portfolio');
+
+    return ok;
+  }
+
+  /* ── Load profile ────────────────────────────────────────── */
+  async function loadProfile() {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (!token) { window.location.href = 'login.html'; return; }
+
+    try {
+      const res = await fetch(API_URL + '/profile', { headers: { Authorization: 'Bearer ' + token } });
+      if (res.status === 401) { window.location.href = 'login.html'; return; }
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || 'Failed to load profile');
+
+      const p = data.profile || {};
+      const ps = p.personal || {};
+      const ac = p.academics || {};
+      const ed = p.education || {};
+      const pl = p.placement || {};
+      const lk = p.links || {};
+      const ids = p.ids || {};
+
+      function setValue(id, val) {
+        const el = $(id);
+        if (!el || val == null) return;
+        el.value = val;
+      }
+
+      function setSelect(id, val) {
+        const el = $(id);
+        if (!el || val == null) return;
+        el.value = String(val);
+        syncSelectLabel(el);
+      }
+
+      setValue('uid', ids.uid);
+      setValue('name', ps.name);
+      setValue('email', data.email || ps.email);
+      setValue('phone', ps.phone);
+      setValue('dob', ps.dob);
+      setValue('age', ps.age);
+      setSelect('gender', ps.gender);
+      setValue('permanent_address', ps.permanent_address);
+
+      setValue('tenth_percentage', ac.tenth_percentage);
+      setValue('twelfth_percentage', ac.twelfth_percentage);
+      setValue('diploma_percentage', ac.diploma_percentage);
+      setValue('graduation_percentage', ac.graduation_percentage);
+      setValue('cgpa', ac.cgpa);
+      setValue('pg_percentage', ac.pg_percentage);
+      setSelect('active_backlog', ac.active_backlog != null ? String(ac.active_backlog) : '');
+      setSelect('backlog_count', ac.backlog_count != null ? ac.backlog_count : '');
+      setSelect('gap_months', ac.gap_months != null ? ac.gap_months : '');
+
+      setValue('college_name', ed.college_name);
+      setSelect('program', ed.program);
+      setSelect('stream', ed.stream);
+      setSelect('batch', ed.batch);
+
+      setSelect('position_applying', pl.position_applying);
+      setValue('github', lk.github);
+      setValue('linkedin', lk.linkedin);
+      setValue('portfolio', lk.portfolio);
+
+      // Set hero email / menu email
+      const emailVal = data.email || ps.email || '';
+      $('heroEmail').textContent = emailVal;
+      $('menuEmail').textContent = emailVal;
+
+      updateCompletion();
+      _snapshot = getSnapshot();
+      setDirty(false);
+    } catch (err) {
+      showToast(err.message || 'Could not load profile', 'error');
+    }
+  }
+
+  /* ── Form submit ─────────────────────────────────────────── */
+  $('profileForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!validateAll()) { showToast('Please fix the highlighted errors', 'error'); return; }
+
+    const btn = $('saveBtn');
+    btn.classList.add('is-loading');
+    btn.disabled = true;
+
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+
+    const profileData = {
+      profile: {
+        personal: {
+          name: v('name'),
+          phone: v('phone'),
+          dob: v('dob'),
+          age: v('age') ? Number(v('age')) : undefined,
+          gender: v('gender'),
+          permanent_address: v('permanent_address')
+        },
+        academics: {
+          tenth_percentage: v('tenth_percentage') !== '' ? Number(v('tenth_percentage')) : undefined,
+          twelfth_percentage: v('twelfth_percentage') !== '' ? Number(v('twelfth_percentage')) : undefined,
+          diploma_percentage: v('diploma_percentage') !== '' ? Number(v('diploma_percentage')) : undefined,
+          graduation_percentage: v('graduation_percentage') !== '' ? Number(v('graduation_percentage')) : undefined,
+          cgpa: v('cgpa') !== '' ? Number(v('cgpa')) : undefined,
+          pg_percentage: v('pg_percentage') !== '' ? Number(v('pg_percentage')) : undefined,
+          active_backlog: v('active_backlog') !== '' ? v('active_backlog') === 'true' : undefined,
+          backlog_count: v('backlog_count') !== '' ? Number(v('backlog_count')) : 0,
+          gap_months: v('gap_months') !== '' ? Number(v('gap_months')) : 0
+        },
+        ids: { uid: v('uid') },
+        education: {
+          college_name: v('college_name'),
+          program: v('program'),
+          stream: v('stream'),
+          batch: v('batch')
+        },
+        placement: { position_applying: v('position_applying') },
+        links: {
+          github: v('github'),
+          linkedin: v('linkedin'),
+          portfolio: v('portfolio')
         }
+      }
+    };
 
-        // ============ LOAD PROFILE ============
-        async function loadProfile() {
-            if (!localStorage.getItem('token')) {
-                window.location.href = 'login.html';
-                return;
-            }
+    try {
+      const res = await fetch(API_URL + '/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify(profileData)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Save failed');
 
-            messageEl.textContent = 'Loading profile...';
-            const result = await apiRequest('/profile', 'GET');
+      btn.classList.remove('is-loading');
+      btn.classList.add('is-success');
+      $('saveBtnLabel').textContent = 'Saved!';
+      showToast('Profile saved successfully', 'success');
+      _snapshot = getSnapshot();
+      setDirty(false);
+      setTimeout(() => {
+        btn.classList.remove('is-success');
+        $('saveBtnLabel').textContent = 'Save Changes';
+      }, 2400);
+    } catch (err) {
+      btn.classList.remove('is-loading');
+      btn.disabled = false;
+      showToast(err.message || 'Save failed. Try again.', 'error');
+    }
+  });
 
-            if (result.data.success) {
-                const p = result.data.profile;
-                messageEl.textContent = '';
+  /* ── Delete Account Modal ───────────────────────────────── */
+  (function () {
+    const backdrop = $('deleteModalBackdrop');
+    const pwInput  = $('deletePassword');
+    const errEl    = $('deleteErr');
+    const confirmBtn = $('confirmDelete');
 
-                // Personal
-                document.getElementById('uid').value = p.ids?.uid || '';
-                document.getElementById('name').value = p.personal?.name || '';
-                document.getElementById('email').value = p.personal?.email || '';
-                document.getElementById('phone').value = p.personal?.phone || '';
-                document.getElementById('dob').value = p.personal?.dob || '';
-                document.getElementById('age').value = p.personal?.age || '';
-                document.getElementById('gender').value = p.personal?.gender || '';
-                document.getElementById('permanent_address').value = p.personal?.permanent_address || '';
+    function openModal() {
+      backdrop.classList.add('show');
+      pwInput.value = '';
+      errEl.textContent = '';
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = 'Delete Permanently';
+      setTimeout(() => pwInput.focus(), 80);
+    }
+    function closeModal() { backdrop.classList.remove('show'); }
 
-                // Academics
-                document.getElementById('tenth_percentage').value = p.academics?.tenth_percentage || '';
-                document.getElementById('twelfth_percentage').value = p.academics?.twelfth_percentage || '';
-                document.getElementById('diploma_percentage').value = p.academics?.diploma_percentage || '';
-                document.getElementById('graduation_percentage').value = p.academics?.graduation_percentage || '';
-                document.getElementById('pg_percentage').value = p.academics?.pg_percentage || '';
-                document.getElementById('cgpa').value = p.academics?.cgpa || '';
-                document.getElementById('active_backlog').value = p.academics?.active_backlog || 'No';
-                document.getElementById('backlog_count').value = p.academics?.backlog_count || '0';
-                document.getElementById('gap_months').value = p.academics?.gap_months || '0';
+    $('openDeleteModal').addEventListener('click', openModal);
+    $('cancelDelete').addEventListener('click', closeModal);
+    backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
-                // Education
-                document.getElementById('college_name').value = p.education?.college_name || '';
-                document.getElementById('program').value = p.education?.program || '';
-                document.getElementById('stream').value = p.education?.stream || '';
-                document.getElementById('batch').value = p.education?.batch || '';
+    confirmBtn.addEventListener('click', async () => {
+      const pwd = pwInput.value;
+      if (!pwd) { errEl.textContent = 'Password is required.'; return; }
+      errEl.textContent = '';
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = 'Deleting…';
 
-                // Placement
-                document.getElementById('position_applying').value = p.placement?.position_applying || '';
-                document.getElementById('github').value = p.links?.github || '';
-                document.getElementById('linkedin').value = p.links?.linkedin || '';
-                document.getElementById('portfolio').value = p.links?.portfolio || '';
-
-            } else {
-                messageEl.textContent = 'Failed to load profile. ' + (result.data.message || '');
-                messageEl.className = 'error';
-                if (result.status === 401) logout();
-            }
-        }
-
-        // ============ SAVE PROFILE ============
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            if (!validateForm()) return;
-
-            messageEl.textContent = 'Saving...';
-            messageEl.className = '';
-
-            const profileData = {
-                personal: {
-                    name: document.getElementById('name').value.trim(),
-                    phone: document.getElementById('phone').value.trim(),
-                    gender: document.getElementById('gender').value,
-                    dob: document.getElementById('dob').value,
-                    age: document.getElementById('age').value.trim(),
-                    permanent_address: document.getElementById('permanent_address').value.trim(),
-                },
-                academics: {
-                    tenth_percentage: document.getElementById('tenth_percentage').value.trim(),
-                    twelfth_percentage: document.getElementById('twelfth_percentage').value.trim(),
-                    diploma_percentage: document.getElementById('diploma_percentage').value.trim(),
-                    graduation_percentage: document.getElementById('graduation_percentage').value.trim(),
-                    pg_percentage: document.getElementById('pg_percentage').value.trim(),
-                    cgpa: document.getElementById('cgpa').value.trim(),
-                    active_backlog: document.getElementById('active_backlog').value,
-                    backlog_count: document.getElementById('backlog_count').value,
-                    gap_months: document.getElementById('gap_months').value.trim(),
-                },
-                ids: {
-                    uid: document.getElementById('uid').value.trim(),
-                },
-                education: {
-                    college_name: document.getElementById('college_name').value.trim(),
-                    program: document.getElementById('program').value,
-                    stream: document.getElementById('stream').value,
-                    batch: document.getElementById('batch').value,
-                },
-                placement: {
-                    position_applying: document.getElementById('position_applying').value.trim(),
-                },
-                links: {
-                    github: document.getElementById('github').value.trim(),
-                    linkedin: document.getElementById('linkedin').value.trim(),
-                    portfolio: document.getElementById('portfolio').value.trim(),
-                }
-            };
-
-            const result = await apiRequest('/profile', 'PUT', { profile: profileData });
-
-            if (result.data.success) {
-                messageEl.textContent = 'Profile saved successfully!';
-                messageEl.className = 'success';
-            } else {
-                messageEl.textContent = result.data.message || 'Update failed';
-                messageEl.className = 'error';
-            }
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      try {
+        const res = await fetch(API_URL + '/user/delete', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+          body: JSON.stringify({ password: pwd }),
         });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Deletion failed.');
+        // Clear all stored credentials and redirect to login
+        localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
+        window.location.href = 'login.html?deleted=1';
+      } catch (err) {
+        errEl.textContent = err.message;
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'Delete Permanently';
+      }
+    });
+  })();
 
-        loadProfile();
-    </script>
+  /* ── Boot ────────────────────────────────────────────────── */
+  loadProfile();
+  </script>
 </body>
 </html>

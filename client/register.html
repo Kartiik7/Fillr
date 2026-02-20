@@ -136,6 +136,19 @@
         </div>
         <span class="fl-hint is-error" id="confirmHint" style="display:none; margin-top:-12px; margin-bottom:16px;">Passwords do not match</span>
 
+        <!-- Legal Consent — required for registration; cannot be bypassed -->
+        <div class="consent-wrap" id="consentWrap">
+          <input type="checkbox" id="termsAccepted" name="termsAccepted">
+          <label for="termsAccepted">
+            I have read and agree to the
+            <a href="terms.html" target="_blank" rel="noopener">Terms &amp; Conditions</a>
+            and
+            <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.
+            I understand that my personal and academic data will be stored to enable the autofill service.
+          </label>
+        </div>
+        <div class="consent-err" id="consentErr">You must accept the Terms &amp; Privacy Policy to register.</div>
+
         <button type="submit" class="btn-submit" id="submitBtn">
           <span class="btn-text">Create account</span>
           <span class="spinner"></span>
@@ -147,6 +160,11 @@
     <p class="auth-footer">
       <a href="index.html">&larr; Back to home</a>
     </p>
+  </div>
+
+  <div class="legal-footer-bar">
+    <a href="terms.html">Terms &amp; Conditions</a>
+    <a href="privacy.html">Privacy Policy</a>
   </div>
 
   <script src="api.js"></script>
@@ -240,6 +258,9 @@
       const email    = document.getElementById('email').value.trim();
       const password = pwInput.value;
       const confirm  = confirmInput.value;
+      const terms    = document.getElementById('termsAccepted').checked;
+      const consentWrap = document.getElementById('consentWrap');
+      const consentErr  = document.getElementById('consentErr');
 
       if (!email || !password || !confirm) {
         showError('Please fill in all fields.');
@@ -257,11 +278,25 @@
         return;
       }
 
+      // Consent is mandatory — cannot register without accepting Terms
+      if (!terms) {
+        consentWrap.classList.add('is-error');
+        consentErr.style.display = 'block';
+        consentErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      consentWrap.classList.remove('is-error');
+      consentErr.style.display = 'none';
+
       submitBtn.classList.add('loading');
       submitBtn.disabled = true;
 
       try {
-        const result = await apiRequest('/auth/register', 'POST', { email, password });
+        const result = await apiRequest('/auth/register', 'POST', {
+          email,
+          password,
+          termsAccepted: true,   // Explicit consent — verified serverside
+        });
 
         if (result.data && result.data.success) {
           document.getElementById('successOverlay').classList.add('show');
@@ -274,6 +309,14 @@
       } finally {
         submitBtn.classList.remove('loading');
         submitBtn.disabled = false;
+      }
+    });
+
+    // Clear consent error when checkbox is clicked
+    document.getElementById('termsAccepted').addEventListener('change', function() {
+      if (this.checked) {
+        document.getElementById('consentWrap').classList.remove('is-error');
+        document.getElementById('consentErr').style.display = 'none';
       }
     });
   </script>

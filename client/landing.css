@@ -333,7 +333,7 @@ ul { list-style: none; }
   display: grid;
   grid-template-columns: 52px 1fr;
   gap: 0 20px;
-  padding: 26px 20px 26px 0;
+  padding: 26px 20px 26px 8px;   /* 8px left keeps content clear of the 3px ::before bar */
   border-bottom: 1px solid var(--border);
   position: relative;
   cursor: default;
@@ -343,7 +343,7 @@ ul { list-style: none; }
 .tl-item:nth-child(even) {
   background: var(--surface);
   margin: 0 -28px;
-  padding-left: 28px;
+  padding-left: 36px;   /* 28px (neg-margin offset) + 8px (bar clearance) */
   padding-right: 28px;
 }
 .tl-item::before {
@@ -716,7 +716,7 @@ ul { list-style: none; }
   }
   .nav-links.open a { width: 100%; text-align: center; border-radius: 6px; }
   .footer .container { flex-direction: column; gap: 10px; text-align: center; }
-  .tl-item:nth-child(even) { margin: 0; padding-left: 0; padding-right: 0; }
+  .tl-item:nth-child(even) { margin: 0; padding-left: 8px; padding-right: 0; }
   .sec-title { font-size: 1.45rem; }
   .cta-inner h2 { font-size: 1.5rem; }
   .cta-inner { padding: 52px 0; }
