@@ -1,31 +1,45 @@
-const jwt = require('jsonwebtoken');
+﻿/**
+ * authMiddleware.js — JWT verification middleware
+ *
+ * Protects against:
+ *  - Unauthorized access:  Rejects requests without a valid Bearer token
+ *  - Token replay:         jwt.verify checks expiry — expired tokens rejected
+ *  - Password hash leakage: .select('-password') never returns hash to handlers
+ *  - Deleted-user tokens:  User.findById check ensures account still exists
+ */
+
+const jwt  = require('jsonwebtoken');
 const User = require('../models/User');
 
 module.exports = async (req, res, next) => {
-  let token;
+  const authHeader = req.headers.authorization;
 
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
-  ) {
-    try {
-      // Get token from header
-      token = req.headers.authorization.split(' ')[1];
-
-      // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-      // Get user from the token
-      req.user = await User.findById(decoded.id).select('-password');
-
-      next();
-    } catch (error) {
-      console.error(error);
-      res.status(401).json({ success: false, message: 'Not authorized, token failed' });
-    }
+  // Reject immediately if header is absent or malformed
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ success: false, message: 'Not authorized. No token provided.' });
   }
 
-  if (!token) {
-    res.status(401).json({ success: false, message: 'Not authorized, no token' });
+  const token = authHeader.split(' ')[1];
+
+  try {
+    // Verify signature + expiry in one call
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Confirm the account still exists — catches deleted-user token reuse
+    // .lean() returns a plain object; no password field ever reaches handlers
+    const user = await User.findById(decoded.id).select('-password -__v').lean();
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Account not found. Please log in again.' });
+    }
+
+    req.user = user;
+    next();
+  } catch (err) {
+    // TokenExpiredError — give a specific, actionable message
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({ success: false, message: 'Session expired. Please log in again.' });
+    }
+    // JsonWebTokenError, NotBeforeError, etc. — generic to avoid oracle
+    return res.status(401).json({ success: false, message: 'Invalid token.' });
   }
 };

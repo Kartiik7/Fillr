@@ -1,13 +1,32 @@
+﻿/**
+ * db.js — MongoDB connection
+ *
+ * Protects against:
+ *  - Hardcoded connection strings: MONGO_URI from environment only
+ *  - Connection-string leakage in logs: host logged only in dev mode
+ *  - Raw Mongo errors sent to client: errors caught here, generic message only
+ *  - Mongo connection leak: serverSelectionTimeoutMS fails fast on bad config
+ */
+
 const mongoose = require('mongoose');
+
+const isProd = process.env.NODE_ENV === 'production';
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI);
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    const conn = await mongoose.connect(process.env.MONGO_URI, {
+      serverSelectionTimeoutMS: 5000, // Fail fast — prevents hanging on bad URI
+    });
+    // In production, do NOT log the host (connection string may be in env logs)
+    if (!isProd) {
+      console.log(`[DB] Connected: ${conn.connection.host}`);
+    } else {
+      console.log('[DB] MongoDB connected.');
+    }
   } catch (error) {
-    console.error(`Error: ${error.message}`);
-    // Do not exit process, just log error so server can still start for other routes
-    console.error('MongoDB connection failed. specific routes may not work.');
+    // Log without exposing the full connection string or stack
+    console.error('[DB] Connection failed. Verify MONGO_URI environment variable.');
+    // Do not process.exit — allow health check to respond with degraded status
   }
 };
 

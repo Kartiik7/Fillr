@@ -5,7 +5,14 @@ const bcrypt = require('bcryptjs');
 const userSchema = new mongoose.Schema({
   username: { type: String, required: false },
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  password: { type: String, required: false }, // Optional for Google OAuth users
+  // ── Authentication provider ───────────────────────────────
+  // Tracks how the user registered — prevents password-less users from
+  // authenticating via the email/password flow.
+  // Backward compatible — existing users default to 'local'.
+  authProvider: { type: String, enum: ['local', 'google'], default: 'local' },
+  googleId:     { type: String, default: null, sparse: true }, // Google OAuth sub
+  displayName:  { type: String, default: '' }, // Name from Google profile
   profile: {
     personal: {
       name: { type: String, default: '' },
@@ -48,13 +55,24 @@ const userSchema = new mongoose.Schema({
       position_applying: { type: String, default: '' },
     },
   },
+  // ── Legal consent (required for GDPR / SaaS compliance) ──
+  // termsAccepted is enforced at registration — no bypass allowed.
+  // Versioning fields allow re-prompting users if policies are updated.
+  // Backward compatibility: defaults allow existing users to keep working.
+  termsAccepted:    { type: Boolean, default: false },
+  termsAcceptedAt:  { type: Date,    default: null  },
+  termsVersion:     { type: String,  default: ''    }, // e.g. "1.0"
+  privacyVersion:   { type: String,  default: ''    }, // e.g. "1.0"
 }, { timestamps: true });
 
-// Measure password strength or add validation here if needed
+// ── Indexes ───────────────────────────────────────────────────
+// googleId index is sparse — only Google OAuth users have this field.
+// Prevents duplicate googleId while allowing null for local users.
+userSchema.index({ googleId: 1 }, { unique: true, sparse: true });
 
-// Encrypt password using bcrypt
+// Encrypt password using bcrypt — only for local auth users
 userSchema.pre('save', async function () {
-  if (!this.isModified('password')) {
+  if (!this.isModified('password') || !this.password) {
     return;
   }
   const salt = await bcrypt.genSalt(10);
@@ -63,6 +81,7 @@ userSchema.pre('save', async function () {
 
 // Match user entered password to hashed password in database
 userSchema.methods.matchPassword = async function (enteredPassword) {
+  if (!this.password) return false; // Google OAuth users have no password
   return await bcrypt.compare(enteredPassword, this.password);
 };
 

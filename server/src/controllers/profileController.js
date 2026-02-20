@@ -1,92 +1,150 @@
+﻿/**
+ * profileController.js — Profile CRUD + GDPR endpoints
+ *
+ * Protects against:
+ *  - Mass assignment / over-posting: Explicit field whitelisting via pick* helpers.
+ *    req.body is NEVER passed directly into a DB query or Model.create().
+ *  - NoSQL injection:  mongoSanitize strips $-keys upstream; pick* ignores extras.
+ *  - Password hash leakage: All queries use .select('-password -__v').
+ *  - Internal error leakage: All errors forwarded to centralized handler via next().
+ *  - Mongo raw error exposure: No mongoose error objects returned to client.
+ */
+
 const User = require('../models/User');
 
-exports.getProfile = async (req, res) => {
+// ── Field whitelisting helpers ────────────────────────────────
+// Only explicitly listed keys are ever written to the database.
+// Any injected keys ($where, __proto__, constructor, etc.) are silently dropped.
+
+const pickPersonal = (src = {}) => ({
+  name:              src.name,
+  phone:             src.phone,
+  gender:            src.gender,
+  dob:               src.dob,
+  age:               src.age,
+  permanent_address: src.permanent_address,
+});
+
+const pickAcademics = (src = {}) => ({
+  tenth_percentage:      src.tenth_percentage,
+  twelfth_percentage:    src.twelfth_percentage,
+  diploma_percentage:    src.diploma_percentage,
+  graduation_percentage: src.graduation_percentage,
+  pg_percentage:         src.pg_percentage,
+  cgpa:                  src.cgpa,
+  active_backlog:        src.active_backlog,
+  backlog_count:         src.backlog_count,
+  gap_months:            src.gap_months,
+});
+
+const pickIds = (src = {}) => ({
+  uid:                    src.uid,
+  roll_number:            src.roll_number,
+  university_roll_number: src.university_roll_number,
+});
+
+const pickLinks = (src = {}) => ({
+  github:    src.github,
+  linkedin:  src.linkedin,
+  portfolio: src.portfolio,
+});
+
+const pickEducation = (src = {}) => ({
+  college_name: src.college_name,
+  batch:        src.batch,
+  program:      src.program,
+  stream:       src.stream,
+});
+
+const pickPlacement = (src = {}) => ({
+  position_applying: src.position_applying,
+});
+
+// ── Helpers ───────────────────────────────────────────────────
+// Apply only defined (non-undefined) picked values to a sub-document
+const applyPicked = (subDoc, picked) => {
+  Object.entries(picked).forEach(([k, v]) => {
+    if (v !== undefined) subDoc[k] = v;
+  });
+};
+
+// ── GET /api/profile ──────────────────────────────────────────
+exports.getProfile = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user._id);
-    if (user) {
-      res.json({
-        success: true,
-        profile: user.profile,
-        email: user.email // Including email at root level as well if needed, but profile has it too
-      });
-    } else {
-      res.status(404).json({ success: false, message: 'User not found' });
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'Server Error' });
+    // Never return password hash or internal Mongo fields
+    const user = await User.findById(req.user._id).select('-password -__v').lean();
+    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+
+    return res.json({ success: true, profile: user.profile, email: user.email });
+  } catch (err) {
+    next(err); // Centralized handler — no raw error exposed to client
   }
 };
 
-exports.updateProfile = async (req, res) => {
+// ── PUT /api/profile ──────────────────────────────────────────
+exports.updateProfile = async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
 
-    if (user) {
-      // Update fields if they exist in request body
-      // We expect the request body to contain a 'profile' object or individual fields
-      // Requirement: "Accept profile object"
-      const { personal, academics, ids, links, education, placement } = req.body.profile || {};
+    // Destructure ONLY the known top-level keys
+    const { personal, academics, ids, links, education, placement } = req.body.profile || {};
 
-      if (personal) {
-        if (personal.name !== undefined) user.profile.personal.name = personal.name;
-        if (personal.email !== undefined) user.profile.personal.email = personal.email;
-        if (personal.phone !== undefined) user.profile.personal.phone = personal.phone;
-        if (personal.gender !== undefined) user.profile.personal.gender = personal.gender;
-        if (personal.dob !== undefined) user.profile.personal.dob = personal.dob;
-        if (personal.age !== undefined) user.profile.personal.age = personal.age;
-        if (personal.permanent_address !== undefined) user.profile.personal.permanent_address = personal.permanent_address;
-      }
+    if (personal)   applyPicked(user.profile.personal,   pickPersonal(personal));
+    if (academics)  applyPicked(user.profile.academics,  pickAcademics(academics));
+    if (ids)        applyPicked(user.profile.ids,         pickIds(ids));
+    if (links)      applyPicked(user.profile.links,       pickLinks(links));
+    if (education)  applyPicked(user.profile.education,   pickEducation(education));
+    if (placement)  applyPicked(user.profile.placement,   pickPlacement(placement));
 
-      if (academics) {
-        if (academics.tenth_percentage !== undefined) user.profile.academics.tenth_percentage = academics.tenth_percentage;
-        if (academics.twelfth_percentage !== undefined) user.profile.academics.twelfth_percentage = academics.twelfth_percentage;
-        if (academics.diploma_percentage !== undefined) user.profile.academics.diploma_percentage = academics.diploma_percentage;
-        if (academics.cgpa !== undefined) user.profile.academics.cgpa = academics.cgpa;
-        if (academics.graduation_percentage !== undefined) user.profile.academics.graduation_percentage = academics.graduation_percentage;
-        if (academics.pg_percentage !== undefined) user.profile.academics.pg_percentage = academics.pg_percentage;
-        if (academics.active_backlog !== undefined) user.profile.academics.active_backlog = academics.active_backlog;
-        if (academics.backlog_count !== undefined) user.profile.academics.backlog_count = academics.backlog_count;
-        if (academics.gap_months !== undefined) user.profile.academics.gap_months = academics.gap_months;
-      }
+    user.markModified('profile');
+    const saved = await user.save();
 
-      if (ids) {
-        if (ids.uid !== undefined) user.profile.ids.uid = ids.uid;
-        if (ids.roll_number !== undefined) user.profile.ids.roll_number = ids.roll_number;
-        if (ids.university_roll_number !== undefined) user.profile.ids.university_roll_number = ids.university_roll_number;
-      }
+    return res.json({
+      success: true,
+      message: 'Profile updated successfully.',
+      profile: saved.profile,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 
-      if (links) {
-        if (links.github !== undefined) user.profile.links.github = links.github;
-        if (links.linkedin !== undefined) user.profile.links.linkedin = links.linkedin;
-        if (links.portfolio !== undefined) user.profile.links.portfolio = links.portfolio;
-      }
+// ── GET /api/profile/my-data — GDPR: Data access ─────────────
+// Returns all stored PII for the authenticated user.
+// Required by GDPR Art. 15 (right of access).
+exports.getMyData = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id).select('-password -__v').lean();
+    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
 
-      if (education) {
-        if (education.college_name !== undefined) user.profile.education.college_name = education.college_name;
-        if (education.batch !== undefined) user.profile.education.batch = education.batch;
-        if (education.program !== undefined) user.profile.education.program = education.program;
-        if (education.stream !== undefined) user.profile.education.stream = education.stream;
-      }
+    return res.json({
+      success: true,
+      data: {
+        email:     user.email,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        profile:   user.profile,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 
-      if (placement) {
-        if (placement.position_applying !== undefined) user.profile.placement.position_applying = placement.position_applying;
-      }
+// ── DELETE /api/profile/account — GDPR: Right to erasure ─────
+// Permanently and irreversibly deletes the user and all associated PII.
+// Required by GDPR Art. 17 (right to be forgotten).
+exports.deleteAccount = async (req, res, next) => {
+  try {
+    const deleted = await User.findByIdAndDelete(req.user._id);
+    if (!deleted) return res.status(404).json({ success: false, message: 'User not found.' });
 
-      // Mark only profile as modified to avoid password re-hashing
-      user.markModified('profile');
-      const updatedUser = await user.save();
-
-      res.json({
-        success: true,
-        message: 'Profile updated successfully',
-        profile: updatedUser.profile
-      });
-    } else {
-      res.status(404).json({ success: false, message: 'User not found' });
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'Server Error' });
+    return res.json({
+      success: true,
+      message: 'Your account and all associated personal data have been permanently deleted.',
+    });
+  } catch (err) {
+    next(err);
   }
 };

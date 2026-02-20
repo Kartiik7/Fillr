@@ -1,8 +1,52 @@
-const express = require('express');
-const router = express.Router();
-const authController = require('../controllers/authController');
+﻿/**
+ * authRoutes.js — Authentication routes with stricter rate limiting
+ *
+ * Stricter limiter here than the global one:
+ *  - Protects against: brute force login, credential stuffing, registration spam
+ *  - skipSuccessfulRequests: only counts failed attempts — legit users unaffected
+ *
+ * Extension auth has its own even stricter limiter:
+ *  - 5 requests per 15 minutes — bcrypt cost (~100ms) + rate limit makes
+ *    brute force on secret keys computationally infeasible.
+ */
 
-router.post('/register', authController.register);
-router.post('/login', authController.login);
+const express   = require('express');
+const rateLimit = require('express-rate-limit');
+const authController = require('../controllers/authController');
+const keyController  = require('../controllers/keyController');
+
+const router = express.Router();
+
+// Stricter auth-specific rate limit — 10 failed attempts per 15 min per IP
+// Protects against: credential stuffing, brute force, registration spam
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true, // Only count failures — benign users unaffected
+  message: { success: false, message: 'Too many attempts. Please try again in 15 minutes.' },
+});
+
+// Extreme rate limit for extension key auth — 5 requests per 15 min per IP
+// Protects against: brute force on secret keys
+// bcrypt comparison (~100ms per key × up to 5 keys) makes each attempt expensive.
+const extensionAuthLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many extension auth attempts. Please try again later.' },
+});
+
+// Email/Password auth
+router.post('/register', authLimiter, authController.register);
+router.post('/login',    authLimiter, authController.login);
+
+// Google OAuth
+router.post('/google',   authLimiter, authController.googleLogin);
+
+// Extension secret key auth
+router.post('/extension', extensionAuthLimiter, keyController.extensionAuth);
 
 module.exports = router;
