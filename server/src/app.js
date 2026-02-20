@@ -56,7 +56,6 @@ const corsOptions = {
   optionsSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
-app.options('/*', cors(corsOptions)); // Handle pre-flight for all routes
 
 // ── Body parsing — with size limit ────────────────────────────
 // Prevents payload-flooding DoS attacks
