@@ -39,7 +39,7 @@ app.use(compression());
 // Wildcard is NEVER allowed in production.
 const ALLOWED_ORIGINS = [
   process.env.FRONTEND_URL,
-  ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map(s => s.trim()) : []),
+  ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map(s => s.trim().replace(/\/+$/, '')) : []),
 ].filter(Boolean);
 
 const corsOptions = {
