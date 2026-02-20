@@ -810,6 +810,146 @@ button { font-family: var(--sans); }
 }
 .db-modal-confirm:disabled { opacity: .6; cursor: not-allowed; }
 
+/* ── Extension Key Section ──────────────────────────────────── */
+.db-keys-section {
+  max-width: 840px;
+  margin: 28px auto 0;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 28px 30px 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+.db-keys-hdr {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.db-keys-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--dark);
+  margin-bottom: 4px;
+}
+.db-keys-desc {
+  font-size: .83rem;
+  color: #6b7280;
+  line-height: 1.55;
+  margin: 0;
+}
+.db-keys-gen-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  background: var(--blue);
+  color: #fff;
+  font-size: .85rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s, box-shadow .15s;
+}
+.db-keys-gen-btn:hover { background: var(--blue-hover); box-shadow: 0 2px 8px rgba(59,130,246,.25); }
+.db-keys-gen-btn svg { stroke: #fff; flex-shrink: 0; }
+
+/* Key list */
+.db-keys-list { display: flex; flex-direction: column; gap: 10px; }
+.db-keys-empty {
+  text-align: center;
+  padding: 28px 16px;
+  font-size: .88rem;
+  color: var(--muted);
+}
+.db-key-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  transition: border-color .15s;
+}
+.db-key-row:hover { border-color: #bfdbfe; }
+.db-key-row.revoked { opacity: .55; }
+.db-key-info { flex: 1; min-width: 0; }
+.db-key-name {
+  font-size: .9rem;
+  font-weight: 600;
+  color: var(--dark);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.db-key-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: .77rem;
+  color: #9ca3af;
+}
+.db-key-status {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  font-size: .7rem;
+}
+.db-key-status.active  { color: var(--green); }
+.db-key-status.expired { color: var(--amber); }
+.db-key-status.revoked { color: var(--danger); }
+.db-key-actions { flex-shrink: 0; }
+.db-key-revoke-btn {
+  padding: 6px 14px;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--danger);
+  background: transparent;
+  border: 1.5px solid var(--danger);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.db-key-revoke-btn:hover { background: var(--danger); color: #fff; }
+
+/* Key display (one-time view after generation) */
+.db-key-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  background: #f0f4f8;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+.db-key-display code {
+  flex: 1;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .78rem;
+  color: var(--dark);
+  word-break: break-all;
+  line-height: 1.5;
+}
+.db-key-copy-btn {
+  flex-shrink: 0;
+  padding: 6px;
+  background: transparent;
+  border: 1.5px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: color .15s, border-color .15s;
+}
+.db-key-copy-btn:hover { color: var(--blue); border-color: var(--blue); }
+
 /* ── Dashboard legal footer ─────────────────────────────────── */
 .db-legal-footer {
   text-align: center;
@@ -823,4 +963,10 @@ button { font-family: var(--sans); }
   .db-danger-zone { flex-direction: column; align-items: flex-start; gap: 14px; }
   .db-danger-btn { width: 100%; }
   .db-modal { padding: 28px 20px 24px; }
+  .db-keys-section { padding: 20px 16px 18px; }
+  .db-keys-hdr { flex-direction: column; }
+  .db-keys-gen-btn { width: 100%; justify-content: center; }
+  .db-key-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .db-key-actions { width: 100%; }
+  .db-key-revoke-btn { width: 100%; text-align: center; }
 }

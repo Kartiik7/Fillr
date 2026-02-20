@@ -1,4 +1,5 @@
-const API_URL = 'https://fillr-gqyp.onrender.com/api';
+// API_URL is provided by env.js (loaded before this script)
+const API_URL = (typeof ENV !== 'undefined' && ENV.API_URL) || 'https://fillr-gqyp.onrender.com/api';
 
 async function apiRequest(endpoint, method = 'GET', body = null) {
     const headers = {

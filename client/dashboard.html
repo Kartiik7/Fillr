@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="dashboard.css">
+  <script src="env.js"></script>
 </head>
 <body>
 
@@ -410,6 +411,70 @@
 
     </form>
 
+    <!-- Extension Keys ───────────────────────── -->
+    <div class="db-keys-section" id="keysSection">
+      <div class="db-keys-hdr">
+        <div>
+          <div class="db-keys-title">🔑 Extension Secret Keys</div>
+          <p class="db-keys-desc">Generate secret keys to connect the Fillr browser extension. Each key is shown <strong>once</strong>&nbsp;— copy it immediately.</p>
+        </div>
+        <button class="db-keys-gen-btn" id="openKeyGenModal" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Generate Key
+        </button>
+      </div>
+
+      <div class="db-keys-list" id="keysList">
+        <div class="db-keys-empty" id="keysEmpty">No extension keys yet. Generate one to get started.</div>
+      </div>
+    </div>
+
+    <!-- Key Generation Modal ─────────────────── -->
+    <div class="db-modal-backdrop" id="keyGenModalBackdrop" role="dialog" aria-modal="true" aria-labelledby="keyGenModalTitle">
+      <div class="db-modal">
+        <div class="db-modal-header">
+          <span class="db-modal-icon">🔐</span>
+          <h2 id="keyGenModalTitle">Generate Extension Key</h2>
+        </div>
+        <p class="db-modal-desc">Enter a name for this key (e.g. "Work laptop") and your password to confirm.</p>
+        <div class="db-fl" style="margin: 16px 0 8px;">
+          <input class="db-fl-input" type="text" id="keyDeviceName" placeholder=" " maxlength="100" autocomplete="off">
+          <label class="db-fl-label" for="keyDeviceName">Device Name</label>
+          <div class="db-fl-bar"></div>
+        </div>
+        <div class="db-fl" style="margin: 0 0 4px;">
+          <input class="db-fl-input" type="password" id="keyGenPassword" placeholder=" " autocomplete="current-password">
+          <label class="db-fl-label" for="keyGenPassword">Your Password</label>
+          <div class="db-fl-bar"></div>
+        </div>
+        <div class="db-modal-err" id="keyGenErr" aria-live="polite"></div>
+        <div class="db-modal-actions">
+          <button class="db-modal-cancel" id="cancelKeyGen" type="button">Cancel</button>
+          <button class="db-modal-confirm" id="confirmKeyGen" type="button" style="background:var(--blue);">Generate</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Key Display Modal (shown once after generation) ──── -->
+    <div class="db-modal-backdrop" id="keyDisplayBackdrop" role="dialog" aria-modal="true" aria-labelledby="keyDisplayTitle">
+      <div class="db-modal" style="max-width:520px;">
+        <div class="db-modal-header">
+          <span class="db-modal-icon">✅</span>
+          <h2 id="keyDisplayTitle">Key Generated</h2>
+        </div>
+        <p class="db-modal-desc"><strong>Copy this key now.</strong> It will not be shown again.</p>
+        <div class="db-key-display">
+          <code id="keyDisplayValue">—</code>
+          <button class="db-key-copy-btn" id="copyKeyBtn" type="button" title="Copy to clipboard">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          </button>
+        </div>
+        <div class="db-modal-actions" style="margin-top:16px;">
+          <button class="db-modal-cancel" id="closeKeyDisplay" type="button">Done</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Danger Zone ──────────────────────────── -->
     <div class="db-danger-zone">
       <div>
@@ -453,7 +518,7 @@
 
   <script>
   /* ── Helpers ─────────────────────────────────────────────── */
-  const API_URL = 'https://fillr-gqyp.onrender.com/api';
+  const API_URL = ENV.API_URL || 'https://fillr-gqyp.onrender.com/api';
   const $ = id => document.getElementById(id);
   const v = id => ($(''+id)?.value || '').trim();
 
@@ -847,6 +912,158 @@
         confirmBtn.textContent = 'Delete Permanently';
       }
     });
+  })();
+
+  /* ── Extension Key Management ─────────────────────────────── */
+  (function () {
+    const listEl       = $('keysList');
+    const emptyEl      = $('keysEmpty');
+    const genBackdrop  = $('keyGenModalBackdrop');
+    const genPwInput   = $('keyGenPassword');
+    const deviceInput  = $('keyDeviceName');
+    const genErr       = $('keyGenErr');
+    const confirmGen   = $('confirmKeyGen');
+    const dispBackdrop = $('keyDisplayBackdrop');
+    const dispValue    = $('keyDisplayValue');
+
+    function getToken() {
+      return localStorage.getItem('token') || sessionStorage.getItem('token');
+    }
+
+    function fmtDate(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso);
+      return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    function renderKeys(keys) {
+      // Remove existing key rows (keep emptyEl)
+      listEl.querySelectorAll('.db-key-row').forEach(r => r.remove());
+      if (!keys || keys.length === 0) { emptyEl.style.display = ''; return; }
+      emptyEl.style.display = 'none';
+
+      keys.forEach(k => {
+        const row = document.createElement('div');
+        row.className = 'db-key-row' + (k.isActive ? '' : ' revoked');
+        const expired = k.expiresAt && new Date(k.expiresAt) < new Date();
+        const statusLabel = !k.isActive ? 'Revoked' : expired ? 'Expired' : 'Active';
+        const statusCls   = !k.isActive ? 'revoked' : expired ? 'expired' : 'active';
+
+        row.innerHTML = `
+          <div class="db-key-info">
+            <div class="db-key-name">${k.deviceName || 'Extension'}</div>
+            <div class="db-key-meta">
+              <span class="db-key-status ${statusCls}">${statusLabel}</span>
+              <span>Created ${fmtDate(k.createdAt)}</span>
+              <span>Expires ${fmtDate(k.expiresAt)}</span>
+              ${k.lastUsedAt ? '<span>Last used ' + fmtDate(k.lastUsedAt) + '</span>' : ''}
+            </div>
+          </div>
+          <div class="db-key-actions">
+            ${k.isActive && !expired ? '<button class="db-key-revoke-btn" data-id="' + k.keyId + '">Revoke</button>' : ''}
+          </div>`;
+        listEl.appendChild(row);
+      });
+
+      // Bind revoke buttons
+      listEl.querySelectorAll('.db-key-revoke-btn').forEach(btn => {
+        btn.addEventListener('click', () => revokeKey(btn.dataset.id));
+      });
+    }
+
+    async function loadKeys() {
+      try {
+        const res = await fetch(API_URL + '/keys', {
+          headers: { Authorization: 'Bearer ' + getToken() }
+        });
+        if (res.status === 401) return;
+        const data = await res.json();
+        if (data.success) renderKeys(data.keys);
+      } catch (_) { /* silent */ }
+    }
+
+    async function revokeKey(keyId) {
+      if (!confirm('Revoke this extension key? The extension will need a new key to reconnect.')) return;
+      try {
+        const res = await fetch(API_URL + '/keys/revoke', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+          body: JSON.stringify({ keyId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Key revoked', 'success');
+          loadKeys();
+        } else {
+          showToast(data.message || 'Failed to revoke key', 'error');
+        }
+      } catch (_) {
+        showToast('Could not revoke key', 'error');
+      }
+    }
+
+    // Generate modal
+    function openGenModal() {
+      genBackdrop.classList.add('show');
+      genPwInput.value = '';
+      deviceInput.value = '';
+      genErr.textContent = '';
+      confirmGen.disabled = false;
+      confirmGen.textContent = 'Generate';
+      setTimeout(() => deviceInput.focus(), 80);
+    }
+    function closeGenModal() { genBackdrop.classList.remove('show'); }
+
+    $('openKeyGenModal').addEventListener('click', openGenModal);
+    $('cancelKeyGen').addEventListener('click', closeGenModal);
+    genBackdrop.addEventListener('click', e => { if (e.target === genBackdrop) closeGenModal(); });
+
+    confirmGen.addEventListener('click', async () => {
+      const pwd = genPwInput.value;
+      if (!pwd) { genErr.textContent = 'Password is required.'; return; }
+      genErr.textContent = '';
+      confirmGen.disabled = true;
+      confirmGen.textContent = 'Generating…';
+
+      try {
+        const res = await fetch(API_URL + '/keys/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+          body: JSON.stringify({ password: pwd, deviceName: deviceInput.value.trim() || undefined })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || 'Key generation failed.');
+
+        closeGenModal();
+        // Show the raw key
+        dispValue.textContent = data.rawKey;
+        dispBackdrop.classList.add('show');
+        loadKeys();
+      } catch (err) {
+        genErr.textContent = err.message;
+        confirmGen.disabled = false;
+        confirmGen.textContent = 'Generate';
+      }
+    });
+
+    // Display modal
+    $('copyKeyBtn').addEventListener('click', () => {
+      navigator.clipboard.writeText(dispValue.textContent).then(() => {
+        showToast('Key copied to clipboard', 'success');
+      }).catch(() => {
+        // Fallback: select text
+        const range = document.createRange();
+        range.selectNodeContents(dispValue);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        showToast('Select and copy the key above', 'error');
+      });
+    });
+    $('closeKeyDisplay').addEventListener('click', () => { dispBackdrop.classList.remove('show'); });
+    dispBackdrop.addEventListener('click', e => { if (e.target === dispBackdrop) dispBackdrop.classList.remove('show'); });
+
+    // Initial load
+    loadKeys();
   })();
 
   /* ── Boot ────────────────────────────────────────────────── */
