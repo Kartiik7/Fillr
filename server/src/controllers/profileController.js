@@ -41,6 +41,7 @@ exports.updateProfile = async (req, res) => {
       if (academics) {
         if (academics.tenth_percentage !== undefined) user.profile.academics.tenth_percentage = academics.tenth_percentage;
         if (academics.twelfth_percentage !== undefined) user.profile.academics.twelfth_percentage = academics.twelfth_percentage;
+        if (academics.diploma_percentage !== undefined) user.profile.academics.diploma_percentage = academics.diploma_percentage;
         if (academics.cgpa !== undefined) user.profile.academics.cgpa = academics.cgpa;
         if (academics.graduation_percentage !== undefined) user.profile.academics.graduation_percentage = academics.graduation_percentage;
         if (academics.pg_percentage !== undefined) user.profile.academics.pg_percentage = academics.pg_percentage;

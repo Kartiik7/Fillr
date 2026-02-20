@@ -19,6 +19,7 @@ const userSchema = new mongoose.Schema({
     academics: {
       tenth_percentage: { type: String, default: '' },
       twelfth_percentage: { type: String, default: '' },
+      diploma_percentage: { type: String, default: '' }, // Diploma percentage
       cgpa: { type: String, default: '' },
       graduation_percentage: { type: String, default: '' },
       pg_percentage: { type: String, default: '' },
