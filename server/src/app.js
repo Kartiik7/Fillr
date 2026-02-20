@@ -34,12 +34,12 @@ app.use(compression());
 
 // ── Strict CORS ───────────────────────────────────────────────
 // Protects against: CORS bypass via spoofed origins
-// Explicitly whitelists production frontend + chrome-extension origins.
+// Reads allowed origins from CORS_ORIGINS env var (comma-separated).
+// FRONTEND_URL is always included if set. chrome-extension:// is auto-allowed.
 // Wildcard is NEVER allowed in production.
 const ALLOWED_ORIGINS = [
-  process.env.FRONTEND_URL,     // e.g. https://fillr.onrender.com
-  'http://127.0.0.1:5500',      // Live Server (dev)
-  'http://localhost:3000',       // Local dev
+  process.env.FRONTEND_URL,
+  ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map(s => s.trim()) : []),
 ].filter(Boolean);
 
 const corsOptions = {
@@ -56,7 +56,7 @@ const corsOptions = {
   optionsSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Handle pre-flight for all routes
+app.options('/*', cors(corsOptions)); // Handle pre-flight for all routes
 
 // ── Body parsing — with size limit ────────────────────────────
 // Prevents payload-flooding DoS attacks
