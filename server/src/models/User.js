@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema({
   // authenticating via the email/password flow.
   // Backward compatible — existing users default to 'local'.
   authProvider: { type: String, enum: ['local', 'google'], default: 'local' },
-  googleId:     { type: String, default: null, sparse: true }, // Google OAuth sub
+  googleId:     { type: String, default: null }, // Google OAuth sub — index defined below
   displayName:  { type: String, default: '' }, // Name from Google profile
   profile: {
     personal: {

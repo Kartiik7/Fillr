@@ -65,7 +65,14 @@ app.use(express.urlencoded({ extended: false, limit: '20kb' }));
 // ── NoSQL injection sanitization ──────────────────────────────
 // Strips $ and . from keys — prevents $where, $gt, $regex injection
 // Protects against: User.find(req.body) style injection attacks
-app.use(mongoSanitize());
+// express-mongo-sanitize middleware is NOT used because Express 5 makes
+// req.query read-only, causing "Cannot set property query" errors.
+// Instead we use the sanitize() function directly on body & params.
+app.use((req, _res, next) => {
+  if (req.body)   mongoSanitize.sanitize(req.body);
+  if (req.params) mongoSanitize.sanitize(req.params);
+  next();
+});
 
 // ── Global rate limiter ───────────────────────────────────────
 // Protects against: rate abuse, DDoS, brute force on non-auth routes
