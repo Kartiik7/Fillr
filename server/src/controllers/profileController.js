@@ -33,6 +33,9 @@ exports.updateProfile = async (req, res) => {
         if (personal.email !== undefined) user.profile.personal.email = personal.email;
         if (personal.phone !== undefined) user.profile.personal.phone = personal.phone;
         if (personal.gender !== undefined) user.profile.personal.gender = personal.gender;
+        if (personal.dob !== undefined) user.profile.personal.dob = personal.dob;
+        if (personal.age !== undefined) user.profile.personal.age = personal.age;
+        if (personal.permanent_address !== undefined) user.profile.personal.permanent_address = personal.permanent_address;
       }
 
       if (academics) {
@@ -40,8 +43,10 @@ exports.updateProfile = async (req, res) => {
         if (academics.twelfth_percentage !== undefined) user.profile.academics.twelfth_percentage = academics.twelfth_percentage;
         if (academics.cgpa !== undefined) user.profile.academics.cgpa = academics.cgpa;
         if (academics.graduation_percentage !== undefined) user.profile.academics.graduation_percentage = academics.graduation_percentage;
+        if (academics.pg_percentage !== undefined) user.profile.academics.pg_percentage = academics.pg_percentage;
         if (academics.active_backlog !== undefined) user.profile.academics.active_backlog = academics.active_backlog;
         if (academics.backlog_count !== undefined) user.profile.academics.backlog_count = academics.backlog_count;
+        if (academics.gap_months !== undefined) user.profile.academics.gap_months = academics.gap_months;
       }
 
       if (ids) {

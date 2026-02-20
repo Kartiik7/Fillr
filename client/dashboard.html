@@ -37,14 +37,46 @@
                     <option value="Other">Other</option>
                 </select>
             </label>
+            <label>Date of Birth: <input type="date" id="dob"></label>
+            <label>Age (Years): <input type="number" id="age" min="0" max="100"></label>
+            <label>Permanent Address: <textarea id="permanent_address" rows="2" style="width: 100%; max-width: 300px;"></textarea></label>
         </div>
 
         <div class="section">
             <h3>Education</h3>
             <label>College Name: <input type="text" id="college_name"></label>
-            <label>Batch (Passing Year): <input type="text" id="batch" placeholder="e.g. 2024"></label>
+            <label>Batch (Passing Year): 
+                <select id="batch" style="width: 100%; max-width: 300px; padding: 5px; margin-bottom: 5px;">
+                    <option value="">Select Year</option>
+                    <option value="2023">2023</option>
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                    <option value="2026">2026</option>
+                    <option value="2027">2027</option>
+                    <option value="2028">2028</option>
+                    <option value="2029">2029</option>
+                </select>
+            </label>
             <label>Program / Degree: <input type="text" id="program" placeholder="e.g. B.Tech"></label>
-            <label>Stream / Branch: <input type="text" id="stream" placeholder="e.g. CSE"></label>
+            <label>Stream / Branch: 
+                <select id="stream" style="width: 100%; max-width: 300px; padding: 5px; margin-bottom: 5px;">
+                    <option value="">Select Stream</option>
+                    <option value="CSE">CSE</option>
+                    <option value="IT">IT</option>
+                    <option value="AIML">AIML</option>
+                    <option value="BDA">BDA</option>
+                    <option value="IoT">IoT</option>
+                    <option value="CC">CC</option>
+                    <option value="GG">GG</option>
+                    <option value="CSBS">CSBS</option>
+                    <option value="IS">IS</option>
+                    <option value="Blockchain">Blockchain</option>
+                    <option value="Devops">Devops</option>
+                    <option value="ME">ME</option>
+                    <option value="CE">CE</option>
+                    <option value="ECE">ECE</option>
+                </select>
+            </label>
         </div>
 
         <div class="section">
@@ -60,7 +92,8 @@
                     <option value="Yes">Yes</option>
                 </select>
             </label>
-            <label>Backlog Count: <input type="number" id="backlog_count" value="0"></label>
+            <label>Backlog Count: <input type="number" id="backlog_count" value="0" min="0"></label>
+            <label>Gap in Education (Months): <input type="number" id="gap_months" value="0" min="0"></label>
         </div>
 
         <div class="section">
@@ -109,6 +142,9 @@
                 document.getElementById('email').value = p.personal?.email || '';
                 document.getElementById('phone').value = p.personal?.phone || '';
                 document.getElementById('gender').value = p.personal?.gender || '';
+                document.getElementById('dob').value = p.personal?.dob || '';
+                document.getElementById('age').value = p.personal?.age || '';
+                document.getElementById('permanent_address').value = p.personal?.permanent_address || '';
 
                 // Education
                 document.getElementById('college_name').value = p.education?.college_name || '';
@@ -124,6 +160,7 @@
                 document.getElementById('cgpa').value = p.academics?.cgpa || '';
                 document.getElementById('active_backlog').value = p.academics?.active_backlog || 'No';
                 document.getElementById('backlog_count').value = p.academics?.backlog_count || '0';
+                document.getElementById('gap_months').value = p.academics?.gap_months || '0';
 
                 // IDs
                 document.getElementById('uid').value = p.ids?.uid || '';
@@ -156,6 +193,9 @@
                     name: document.getElementById('name').value,
                     phone: document.getElementById('phone').value,
                     gender: document.getElementById('gender').value,
+                    dob: document.getElementById('dob').value,
+                    age: document.getElementById('age').value,
+                    permanent_address: document.getElementById('permanent_address').value,
                 },
                 education: {
                     college_name: document.getElementById('college_name').value,
@@ -171,6 +211,7 @@
                     cgpa: document.getElementById('cgpa').value,
                     active_backlog: document.getElementById('active_backlog').value,
                     backlog_count: document.getElementById('backlog_count').value,
+                    gap_months: document.getElementById('gap_months').value,
                 },
                 ids: {
                     uid: document.getElementById('uid').value,

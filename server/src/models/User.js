@@ -12,6 +12,9 @@ const userSchema = new mongoose.Schema({
       email: { type: String, default: '' },
       phone: { type: String, default: '' },
       gender: { type: String, default: '' }, // Male/Female/Other
+      dob: { type: String, default: '' }, // Date of Birth (YYYY-MM-DD)
+      age: { type: String, default: '' }, // Age in years
+      permanent_address: { type: String, default: '' }, // Permanent address
     },
     academics: {
       tenth_percentage: { type: String, default: '' },
@@ -21,6 +24,7 @@ const userSchema = new mongoose.Schema({
       pg_percentage: { type: String, default: '' },
       active_backlog: { type: String, default: 'No' }, // Yes/No
       backlog_count: { type: String, default: '0' },
+      gap_months: { type: String, default: '0' }, // Gap in education (months)
     },
     ids: {
       uid: { type: String, default: '' },
