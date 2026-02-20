@@ -3,119 +3,197 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Placement Autofill</title>
-    <style>
-        body { font-family: sans-serif; padding: 20px; }
-        .section { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
-        h3 { margin-top: 0; }
-        label { display: block; margin-top: 5px; }
-        input { margin-bottom: 5px; width: 100%; max-width: 300px; display: block; }
-        button { margin-top: 10px; cursor: pointer; }
-        .success { color: green; }
-        .error { color: red; }
-    </style>
+    <title>Dashboard - Fillr</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-    <div style="display: flex; justify-content: space-between; align-items: center;">
+<body class="dashboard-body">
+    <div class="header">
         <h1>Placement Profile Dashboard</h1>
         <button onclick="logout()">Logout</button>
     </div>
-    
     <p id="message"></p>
 
-    <form id="profileForm">
+    <form id="profileForm" novalidate>
+
+        <!-- ========== PERSONAL DETAILS ========== -->
         <div class="section">
             <h3>Personal Details</h3>
-            <label>Name: <input type="text" id="name"></label>
-            <label>Email: <input type="email" id="email" disabled title="Cannot change email"></label>
-            <label>Phone: <input type="text" id="phone"></label>
-            <label>Gender: 
-                <select id="gender" style="width: 100%; max-width: 300px; padding: 5px; margin-bottom: 5px;">
-                    <option value="">Select Gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                </select>
-            </label>
-            <label>Date of Birth: <input type="date" id="dob"></label>
-            <label>Age (Years): <input type="number" id="age" min="0" max="100"></label>
-            <label>Permanent Address: <textarea id="permanent_address" rows="2" style="width: 100%; max-width: 300px;"></textarea></label>
+            <div class="field-grid">
+                <div class="field">
+                    <label for="uid">UID / Roll No <span class="req">*</span></label>
+                    <input type="text" id="uid" required>
+                </div>
+                <div class="field">
+                    <label for="name">Full Name <span class="req">*</span></label>
+                    <input type="text" id="name" required>
+                </div>
+                <div class="field">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" disabled title="Cannot change email">
+                </div>
+                <div class="field">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" pattern="[0-9]{10}" maxlength="10" placeholder="10 digits">
+                </div>
+                <div class="field">
+                    <label for="dob">Date of Birth</label>
+                    <input type="date" id="dob">
+                </div>
+                <div class="field">
+                    <label for="age">Age (Years)</label>
+                    <input type="number" id="age" min="0" max="100" step="1">
+                </div>
+                <div class="field">
+                    <label for="gender">Gender</label>
+                    <select id="gender">
+                        <option value="">Select Gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="field" style="grid-column: 1 / -1;">
+                    <label for="permanent_address">Permanent Address</label>
+                    <textarea id="permanent_address" rows="2" placeholder="Full permanent address"></textarea>
+                </div>
+            </div>
         </div>
 
+        <!-- ========== ACADEMIC DETAILS ========== -->
         <div class="section">
-            <h3>Education</h3>
-            <label>College Name: <input type="text" id="college_name"></label>
-            <label>Batch (Passing Year): 
-                <select id="batch" style="width: 100%; max-width: 300px; padding: 5px; margin-bottom: 5px;">
-                    <option value="">Select Year</option>
-                    <option value="2023">2023</option>
-                    <option value="2024">2024</option>
-                    <option value="2025">2025</option>
-                    <option value="2026">2026</option>
-                    <option value="2027">2027</option>
-                    <option value="2028">2028</option>
-                    <option value="2029">2029</option>
-                </select>
-            </label>
-            <label>Program / Degree: <input type="text" id="program" placeholder="e.g. B.Tech"></label>
-            <label>Stream / Branch: 
-                <select id="stream" style="width: 100%; max-width: 300px; padding: 5px; margin-bottom: 5px;">
-                    <option value="">Select Stream</option>
-                    <option value="CSE">CSE</option>
-                    <option value="IT">IT</option>
-                    <option value="AIML">AIML</option>
-                    <option value="BDA">BDA</option>
-                    <option value="IoT">IoT</option>
-                    <option value="CC">CC</option>
-                    <option value="GG">GG</option>
-                    <option value="CSBS">CSBS</option>
-                    <option value="IS">IS</option>
-                    <option value="Blockchain">Blockchain</option>
-                    <option value="Devops">Devops</option>
-                    <option value="ME">ME</option>
-                    <option value="CE">CE</option>
-                    <option value="ECE">ECE</option>
-                </select>
-            </label>
+            <h3>Academic Details</h3>
+            <div class="field-grid">
+                <div class="field">
+                    <label for="tenth_percentage">10th Percentage</label>
+                    <input type="number" id="tenth_percentage" min="0" max="100" step="0.01" placeholder="e.g. 85.50">
+                </div>
+                <div class="field">
+                    <label for="twelfth_percentage">12th Percentage</label>
+                    <input type="number" id="twelfth_percentage" min="0" max="100" step="0.01" placeholder="e.g. 78.20">
+                </div>
+                <div class="field">
+                    <label for="diploma_percentage">Diploma Percentage</label>
+                    <input type="number" id="diploma_percentage" min="0" max="100" step="0.01" placeholder="e.g. 72.00">
+                </div>
+                <div class="field">
+                    <label for="graduation_percentage">Graduation % (Aggregate)</label>
+                    <input type="number" id="graduation_percentage" min="0" max="100" step="0.01" placeholder="e.g. 80.00">
+                </div>
+                <div class="field">
+                    <label for="pg_percentage">PG Percentage</label>
+                    <input type="number" id="pg_percentage" min="0" max="100" step="0.01" placeholder="e.g. 75.00">
+                </div>
+                <div class="field">
+                    <label for="cgpa">CGPA</label>
+                    <input type="number" id="cgpa" min="0" max="10" step="0.01" placeholder="e.g. 8.50">
+                </div>
+                <div class="field">
+                    <label for="active_backlog">Active Backlog</label>
+                    <select id="active_backlog">
+                        <option value="No">No</option>
+                        <option value="Yes">Yes</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="backlog_count">Backlog Count</label>
+                    <select id="backlog_count">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5+">5+</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="gap_months">Gap in Education (Months)</label>
+                    <input type="number" id="gap_months" min="0" max="120" step="1" value="0">
+                </div>
+            </div>
         </div>
 
+        <!-- ========== EDUCATION DETAILS ========== -->
         <div class="section">
-            <h3>Academics</h3>
-            <label>10th Percentage: <input type="text" id="tenth_percentage"></label>
-            <label>12th Percentage: <input type="text" id="twelfth_percentage"></label>
-            <label>Graudation % (Agg): <input type="text" id="graduation_percentage"></label>
-            <label>PG Percentage: <input type="text" id="pg_percentage"></label>
-            <label>CGPA: <input type="text" id="cgpa"></label>
-            <label>Active Backlogs: 
-                <select id="active_backlog" style="width: 100%; max-width: 300px; padding: 5px; margin-bottom: 5px;">
-                    <option value="No">No</option>
-                    <option value="Yes">Yes</option>
-                </select>
-            </label>
-            <label>Backlog Count: <input type="number" id="backlog_count" value="0" min="0"></label>
-            <label>Gap in Education (Months): <input type="number" id="gap_months" value="0" min="0"></label>
+            <h3>Education Details</h3>
+            <div class="field-grid">
+                <div class="field">
+                    <label for="college_name">College Name</label>
+                    <input type="text" id="college_name" placeholder="e.g. Chandigarh University">
+                </div>
+                <div class="field">
+                    <label for="program">Program / Degree</label>
+                    <select id="program">
+                        <option value="">Select Program</option>
+                        <option value="B.Tech">B.Tech</option>
+                        <option value="BE">BE</option>
+                        <option value="M.Tech">M.Tech</option>
+                        <option value="MCA">MCA</option>
+                        <option value="BCA">BCA</option>
+                        <option value="MBA">MBA</option>
+                        <option value="B.Sc">B.Sc</option>
+                        <option value="M.Sc">M.Sc</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="stream">Stream / Branch</label>
+                    <select id="stream">
+                        <option value="">Select Stream</option>
+                        <option value="CSE">CSE</option>
+                        <option value="IT">IT</option>
+                        <option value="AIML">AIML</option>
+                        <option value="BDA">BDA</option>
+                        <option value="IoT">IoT</option>
+                        <option value="CC">CC</option>
+                        <option value="GG">GG</option>
+                        <option value="CSBS">CSBS</option>
+                        <option value="IS">IS</option>
+                        <option value="Blockchain">Blockchain</option>
+                        <option value="Devops">Devops</option>
+                        <option value="ME">ME</option>
+                        <option value="CE">CE</option>
+                        <option value="ECE">ECE</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="batch">Batch (Passing Year)</label>
+                    <select id="batch">
+                        <option value="">Select Year</option>
+                        <option value="2023">2023</option>
+                        <option value="2024">2024</option>
+                        <option value="2025">2025</option>
+                        <option value="2026">2026</option>
+                        <option value="2027">2027</option>
+                        <option value="2028">2028</option>
+                        <option value="2029">2029</option>
+                    </select>
+                </div>
+            </div>
         </div>
 
+        <!-- ========== PLACEMENT DETAILS ========== -->
         <div class="section">
-            <h3>College IDs</h3>
-            <label>UID: <input type="text" id="uid"></label>
-            <label>Roll Number: <input type="text" id="roll_number"></label>
-            <label>University Roll No: <input type="text" id="university_roll_number"></label>
+            <h3>Placement Details</h3>
+            <div class="field-grid">
+                <div class="field">
+                    <label for="position_applying">Position Applying For</label>
+                    <input type="text" id="position_applying" placeholder="e.g. SDE, Data Analyst">
+                </div>
+                <div class="field">
+                    <label for="github">GitHub</label>
+                    <input type="url" id="github" placeholder="https://github.com/username">
+                </div>
+                <div class="field">
+                    <label for="linkedin">LinkedIn</label>
+                    <input type="url" id="linkedin" placeholder="https://linkedin.com/in/username">
+                </div>
+                <div class="field">
+                    <label for="portfolio">Portfolio</label>
+                    <input type="url" id="portfolio" placeholder="https://yourportfolio.com">
+                </div>
+            </div>
         </div>
 
-        <div class="section">
-            <h3>Placement</h3>
-            <label>Position Applying For: <input type="text" id="position_applying"></label>
-        </div>
-
-        <div class="section">
-            <h3>Links</h3>
-            <label>GitHub: <input type="text" id="github"></label>
-            <label>LinkedIn: <input type="text" id="linkedin"></label>
-            <label>Portfolio: <input type="text" id="portfolio"></label>
-        </div>
-
-        <button type="submit" style="padding: 10px 20px; font-size: 16px;">Save Profile</button>
+        <button type="submit" class="btn-save">Save Profile</button>
     </form>
 
     <script src="api.js"></script>
@@ -123,7 +201,75 @@
         const form = document.getElementById('profileForm');
         const messageEl = document.getElementById('message');
 
-        // Load Profile on Load
+        // ============ VALIDATION ============
+        function validateForm() {
+            let valid = true;
+            const errors = [];
+
+            // Clear previous invalid states
+            document.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid'));
+
+            // Required fields
+            const requiredFields = [
+                { id: 'uid', label: 'UID' },
+                { id: 'name', label: 'Full Name' },
+            ];
+            requiredFields.forEach(({ id, label }) => {
+                const el = document.getElementById(id);
+                if (!el.value.trim()) {
+                    el.classList.add('invalid');
+                    errors.push(`${label} is required`);
+                    valid = false;
+                }
+            });
+
+            // Numeric percentage fields (must be valid number 0-100 if filled)
+            const pctFields = ['tenth_percentage', 'twelfth_percentage', 'diploma_percentage', 'graduation_percentage', 'pg_percentage'];
+            pctFields.forEach(id => {
+                const el = document.getElementById(id);
+                const val = el.value.trim();
+                if (val !== '' && (isNaN(parseFloat(val)) || parseFloat(val) < 0 || parseFloat(val) > 100)) {
+                    el.classList.add('invalid');
+                    errors.push(`${id.replace(/_/g, ' ')} must be a number between 0 and 100`);
+                    valid = false;
+                }
+            });
+
+            // CGPA (0-10)
+            const cgpaEl = document.getElementById('cgpa');
+            const cgpaVal = cgpaEl.value.trim();
+            if (cgpaVal !== '' && (isNaN(parseFloat(cgpaVal)) || parseFloat(cgpaVal) < 0 || parseFloat(cgpaVal) > 10)) {
+                cgpaEl.classList.add('invalid');
+                errors.push('CGPA must be a number between 0 and 10');
+                valid = false;
+            }
+
+            // Age (numeric, 0-100)
+            const ageEl = document.getElementById('age');
+            const ageVal = ageEl.value.trim();
+            if (ageVal !== '' && (isNaN(parseInt(ageVal)) || parseInt(ageVal) < 0 || parseInt(ageVal) > 100)) {
+                ageEl.classList.add('invalid');
+                errors.push('Age must be a number between 0 and 100');
+                valid = false;
+            }
+
+            // Gap months (numeric, 0-120)
+            const gapEl = document.getElementById('gap_months');
+            const gapVal = gapEl.value.trim();
+            if (gapVal !== '' && (isNaN(parseInt(gapVal)) || parseInt(gapVal) < 0)) {
+                gapEl.classList.add('invalid');
+                errors.push('Gap months must be a valid number');
+                valid = false;
+            }
+
+            if (!valid) {
+                messageEl.textContent = errors[0]; // Show first error
+                messageEl.className = 'error';
+            }
+            return valid;
+        }
+
+        // ============ LOAD PROFILE ============
         async function loadProfile() {
             if (!localStorage.getItem('token')) {
                 window.location.href = 'login.html';
@@ -136,25 +282,21 @@
             if (result.data.success) {
                 const p = result.data.profile;
                 messageEl.textContent = '';
-                
+
                 // Personal
+                document.getElementById('uid').value = p.ids?.uid || '';
                 document.getElementById('name').value = p.personal?.name || '';
                 document.getElementById('email').value = p.personal?.email || '';
                 document.getElementById('phone').value = p.personal?.phone || '';
-                document.getElementById('gender').value = p.personal?.gender || '';
                 document.getElementById('dob').value = p.personal?.dob || '';
                 document.getElementById('age').value = p.personal?.age || '';
+                document.getElementById('gender').value = p.personal?.gender || '';
                 document.getElementById('permanent_address').value = p.personal?.permanent_address || '';
-
-                // Education
-                document.getElementById('college_name').value = p.education?.college_name || '';
-                document.getElementById('batch').value = p.education?.batch || '';
-                document.getElementById('program').value = p.education?.program || '';
-                document.getElementById('stream').value = p.education?.stream || '';
 
                 // Academics
                 document.getElementById('tenth_percentage').value = p.academics?.tenth_percentage || '';
                 document.getElementById('twelfth_percentage').value = p.academics?.twelfth_percentage || '';
+                document.getElementById('diploma_percentage').value = p.academics?.diploma_percentage || '';
                 document.getElementById('graduation_percentage').value = p.academics?.graduation_percentage || '';
                 document.getElementById('pg_percentage').value = p.academics?.pg_percentage || '';
                 document.getElementById('cgpa').value = p.academics?.cgpa || '';
@@ -162,15 +304,14 @@
                 document.getElementById('backlog_count').value = p.academics?.backlog_count || '0';
                 document.getElementById('gap_months').value = p.academics?.gap_months || '0';
 
-                // IDs
-                document.getElementById('uid').value = p.ids?.uid || '';
-                document.getElementById('roll_number').value = p.ids?.roll_number || '';
-                document.getElementById('university_roll_number').value = p.ids?.university_roll_number || '';
+                // Education
+                document.getElementById('college_name').value = p.education?.college_name || '';
+                document.getElementById('program').value = p.education?.program || '';
+                document.getElementById('stream').value = p.education?.stream || '';
+                document.getElementById('batch').value = p.education?.batch || '';
 
-                // Placeemnt
+                // Placement
                 document.getElementById('position_applying').value = p.placement?.position_applying || '';
-
-                // Links
                 document.getElementById('github').value = p.links?.github || '';
                 document.getElementById('linkedin').value = p.links?.linkedin || '';
                 document.getElementById('portfolio').value = p.links?.portfolio || '';
@@ -182,49 +323,51 @@
             }
         }
 
-        // Update Profile
+        // ============ SAVE PROFILE ============
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            if (!validateForm()) return;
+
             messageEl.textContent = 'Saving...';
             messageEl.className = '';
 
             const profileData = {
                 personal: {
-                    name: document.getElementById('name').value,
-                    phone: document.getElementById('phone').value,
+                    name: document.getElementById('name').value.trim(),
+                    phone: document.getElementById('phone').value.trim(),
                     gender: document.getElementById('gender').value,
                     dob: document.getElementById('dob').value,
-                    age: document.getElementById('age').value,
-                    permanent_address: document.getElementById('permanent_address').value,
-                },
-                education: {
-                    college_name: document.getElementById('college_name').value,
-                    batch: document.getElementById('batch').value,
-                    program: document.getElementById('program').value,
-                    stream: document.getElementById('stream').value,
+                    age: document.getElementById('age').value.trim(),
+                    permanent_address: document.getElementById('permanent_address').value.trim(),
                 },
                 academics: {
-                    tenth_percentage: document.getElementById('tenth_percentage').value,
-                    twelfth_percentage: document.getElementById('twelfth_percentage').value,
-                    graduation_percentage: document.getElementById('graduation_percentage').value,
-                    pg_percentage: document.getElementById('pg_percentage').value,
-                    cgpa: document.getElementById('cgpa').value,
+                    tenth_percentage: document.getElementById('tenth_percentage').value.trim(),
+                    twelfth_percentage: document.getElementById('twelfth_percentage').value.trim(),
+                    diploma_percentage: document.getElementById('diploma_percentage').value.trim(),
+                    graduation_percentage: document.getElementById('graduation_percentage').value.trim(),
+                    pg_percentage: document.getElementById('pg_percentage').value.trim(),
+                    cgpa: document.getElementById('cgpa').value.trim(),
                     active_backlog: document.getElementById('active_backlog').value,
                     backlog_count: document.getElementById('backlog_count').value,
-                    gap_months: document.getElementById('gap_months').value,
+                    gap_months: document.getElementById('gap_months').value.trim(),
                 },
                 ids: {
-                    uid: document.getElementById('uid').value,
-                    roll_number: document.getElementById('roll_number').value,
-                    university_roll_number: document.getElementById('university_roll_number').value,
+                    uid: document.getElementById('uid').value.trim(),
+                },
+                education: {
+                    college_name: document.getElementById('college_name').value.trim(),
+                    program: document.getElementById('program').value,
+                    stream: document.getElementById('stream').value,
+                    batch: document.getElementById('batch').value,
                 },
                 placement: {
-                    position_applying: document.getElementById('position_applying').value,
+                    position_applying: document.getElementById('position_applying').value.trim(),
                 },
                 links: {
-                    github: document.getElementById('github').value,
-                    linkedin: document.getElementById('linkedin').value,
-                    portfolio: document.getElementById('portfolio').value,
+                    github: document.getElementById('github').value.trim(),
+                    linkedin: document.getElementById('linkedin').value.trim(),
+                    portfolio: document.getElementById('portfolio').value.trim(),
                 }
             };
 
