@@ -9,7 +9,7 @@
  *  - Extension:  POST /api/auth/extension  (apiKey → short-lived JWT)
  *
  * Security architecture:
- *  - Raw key is generated using crypto.randomBytes(48) → 64+ hex chars.
+ *  - Raw key is generated in a short readable format: fillr_XXXX-XXXX-XXXX (soft-launch).
  *  - Only bcrypt hash is stored — raw key is returned ONCE at generation.
  *  - Raw key is NEVER logged, NEVER stored, NEVER returned again.
  *  - Extension auth loops through active keys with bcrypt.compare — constant-set comparison.
@@ -50,7 +50,7 @@ const revokeSchema = Joi.object({
 });
 
 const extensionAuthSchema = Joi.object({
-  apiKey: Joi.string().min(64).max(256).required(),
+  apiKey: Joi.string().min(10).max(256).required(),
 });
 
 // ── Generate Key ──────────────────────────────────────────────
@@ -94,9 +94,10 @@ exports.generateKey = async (req, res, next) => {
       });
     }
 
-    // Generate 48 random bytes → 96 hex chars (well above 64-char minimum)
-    // crypto.randomBytes is cryptographically secure
-    const rawKey = crypto.randomBytes(48).toString('hex');
+    // Soft-launch: short readable key  (fillr_XXXX-XXXX-XXXX)
+    // Will be upgraded to longer cryptographic keys later
+    const seg = () => crypto.randomBytes(3).toString('hex').toUpperCase();
+    const rawKey = `fillr_${seg()}-${seg()}-${seg()}`;
 
     // Hash with bcrypt (10 salt rounds) — same cost as passwords
     const hashedKey = await bcrypt.hash(rawKey, 10);
@@ -173,8 +174,9 @@ exports.rotateKey = async (req, res, next) => {
       );
     }
 
-    // Generate new key
-    const rawKey = crypto.randomBytes(48).toString('hex');
+    // Soft-launch: short readable key
+    const seg = () => crypto.randomBytes(3).toString('hex').toUpperCase();
+    const rawKey = `fillr_${seg()}-${seg()}-${seg()}`;
     const hashedKey = await bcrypt.hash(rawKey, 10);
     const newKeyId = uuidv4();
     const expiresAt = new Date(Date.now() + ExtensionKey.KEY_VALIDITY_DAYS * 24 * 60 * 60 * 1000);

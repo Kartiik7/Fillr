@@ -14,8 +14,7 @@ router.put('/',  authMiddleware, profileController.updateProfile);
 
 // GDPR compliance endpoints
 // GET  /api/profile/my-data  — Art. 15: Right of access
-// DELETE /api/profile/account — Art. 17: Right to be forgotten
+// DELETE /api/profile/account — REMOVED: use DELETE /api/user/delete instead
 router.get('/my-data',  authMiddleware, profileController.getMyData);
-router.delete('/account', authMiddleware, profileController.deleteAccount);
 
 module.exports = router;

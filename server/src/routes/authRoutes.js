@@ -12,8 +12,9 @@
 
 const express   = require('express');
 const rateLimit = require('express-rate-limit');
-const authController = require('../controllers/authController');
-const keyController  = require('../controllers/keyController');
+const authController  = require('../controllers/authController');
+const keyController   = require('../controllers/keyController');
+const resetController = require('../controllers/resetController');
 
 const router = express.Router();
 
@@ -48,5 +49,26 @@ router.post('/google',   authLimiter, authController.googleLogin);
 
 // Extension secret key auth
 router.post('/extension', extensionAuthLimiter, keyController.extensionAuth);
+
+// ── Password reset ────────────────────────────────────────────
+// Tight rate limits — prevents token generation spam and brute force.
+// forgot: 3 req / 15 min (email flood prevention)
+// reset:  5 req / 15 min (token brute-force prevention)
+const forgotLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many reset requests. Please try again later.' },
+});
+const resetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many attempts. Please try again later.' },
+});
+router.post('/forgot-password', forgotLimiter, resetController.forgotPassword);
+router.post('/reset-password',  resetLimiter,  resetController.resetPassword);
 
 module.exports = router;

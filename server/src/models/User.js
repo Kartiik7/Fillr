@@ -63,6 +63,12 @@ const userSchema = new mongoose.Schema({
   termsAcceptedAt:  { type: Date,    default: null  },
   termsVersion:     { type: String,  default: ''    }, // e.g. "1.0"
   privacyVersion:   { type: String,  default: ''    }, // e.g. "1.0"
+  // ── Password reset (secure, single-use) ───────────────────
+  // Raw token is NEVER stored — only a SHA-256 hash.
+  // Expiry is 30 minutes from generation.
+  // Both fields are cleared immediately after a successful reset.
+  resetPasswordHash:   { type: String,  default: null, select: false },
+  resetPasswordExpiry: { type: Date,    default: null, select: false },
 }, { timestamps: true });
 
 // ── Indexes ───────────────────────────────────────────────────

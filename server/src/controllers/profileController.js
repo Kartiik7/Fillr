@@ -84,7 +84,7 @@ exports.getProfile = async (req, res, next) => {
 // ── PUT /api/profile ──────────────────────────────────────────
 exports.updateProfile = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user._id).select('-password -__v');
     if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
 
     // Destructure ONLY the known top-level keys
@@ -132,19 +132,7 @@ exports.getMyData = async (req, res, next) => {
   }
 };
 
-// ── DELETE /api/profile/account — GDPR: Right to erasure ─────
-// Permanently and irreversibly deletes the user and all associated PII.
-// Required by GDPR Art. 17 (right to be forgotten).
-exports.deleteAccount = async (req, res, next) => {
-  try {
-    const deleted = await User.findByIdAndDelete(req.user._id);
-    if (!deleted) return res.status(404).json({ success: false, message: 'User not found.' });
-
-    return res.json({
-      success: true,
-      message: 'Your account and all associated personal data have been permanently deleted.',
-    });
-  } catch (err) {
-    next(err);
-  }
-};
+// ── DELETE /api/profile/account ───────────────────────────────
+// REMOVED — account deletion is handled exclusively by
+// DELETE /api/user/delete (userController.deleteAccount)
+// which requires password verification and cleans up ExtensionKeys.
