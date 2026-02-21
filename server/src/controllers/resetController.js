@@ -1,51 +1,52 @@
 /**
- * resetController.js — Secure password reset (minimal beta flow)
+ * resetController.js — Secure password reset with async email delivery
+ *
+ * Architecture:
+ *  - HTTP response is sent IMMEDIATELY after token generation (never blocked by email)
+ *  - Email is sent asynchronously via Resend API (fire-and-forget with logging)
+ *  - 5-second timeout on email delivery — failure is logged, never breaks the response
+ *  - In development mode (NODE_ENV !== 'production'), reset link is logged to console
  *
  * Flow:
  *  1. POST /api/auth/forgot-password  — user submits email
- *     → Generate 32-byte random token
- *     → Store SHA-256 hash in DB (raw token NEVER stored)
- *     → Set 30-minute expiry
- *     → Send email with reset link containing raw token
- *     → Always respond "If an account exists…" (prevents email enumeration)
+ *     → Validate → Find user → Generate 256-bit token → Store SHA-256 hash
+ *     → Respond instantly with generic message
+ *     → Fire async: Send email via Resend (or log in dev mode)
  *
  *  2. POST /api/auth/reset-password   — user submits token + new password
- *     → Hash the incoming token with SHA-256
- *     → Find user by hashed token + valid expiry
- *     → Set new password (bcrypt via User model pre-save hook)
- *     → Invalidate token (clear hash + expiry)
- *     → Respond success
+ *     → Hash incoming token → Find user by hash + valid expiry
+ *     → Set new password → Invalidate token → Respond success
  *
- * Security:
- *  - Token is 32 random bytes (256-bit entropy) — unguessable
- *  - Token stored as SHA-256 hash — even DB breach doesn't reveal token
- *  - 30-minute expiry — limits window of opportunity
+ * Security (unchanged):
+ *  - 256-bit random token — unguessable
+ *  - Stored as SHA-256 hash — DB breach doesn't reveal token
+ *  - 30-minute expiry — limits attack window
  *  - Single-use — cleared after successful reset
- *  - Rate limited at route level (3 req / 15 min for forgot, 5 for reset)
- *  - No email enumeration — identical response regardless of email existence
- *  - Google OAuth users with no password CAN set one via this flow
+ *  - Rate limited at route level (3/15min forgot, 5/15min reset)
+ *  - Anti-enumeration — identical response regardless of email existence
+ *  - Google OAuth users CAN set a password via this flow
+ *
+ * Environment variables:
+ *  - RESEND_API_KEY     — Resend API key (required in production)
+ *  - RESEND_FROM        — Verified sender (e.g. "Fillr <noreply@fillr.app>")
+ *  - FRONTEND_URL       — Frontend origin for reset link (HTTPS)
+ *  - NODE_ENV           — 'production' | 'development'
  */
 
-const crypto     = require('crypto');
-const Joi        = require('joi');
-const nodemailer = require('nodemailer');
-const User       = require('../models/User');
+const crypto   = require('crypto');
+const Joi      = require('joi');
+const { Resend } = require('resend');
+const User     = require('../models/User');
 
-// ── Email transporter ─────────────────────────────────────────
-// Uses SMTP credentials from environment.
-// For beta: Gmail App Password or any SMTP provider.
-// SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS must be set in .env
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT, 10) || 587,
-    secure: false, // true for 465, false for 587 (STARTTLS)
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
-};
+// ── Resend initialisation ────────────────────────────────────
+// Instantiate once at module load. In dev mode the key is optional —
+// emails are logged to console instead.
+const IS_PROD = process.env.NODE_ENV === 'production';
+const resend  = new Resend(process.env.RESEND_API_KEY || '');
+
+if (!process.env.RESEND_API_KEY && IS_PROD) {
+  console.error('[Reset] RESEND_API_KEY is not set — password reset emails will fail in production.');
+}
 
 // ── Input schemas ─────────────────────────────────────────────
 const forgotSchema = Joi.object({
@@ -66,12 +67,89 @@ const resetSchema = Joi.object({
     }),
 });
 
-// ── Token hashing (SHA-256) ───────────────────────────────────
-// We use SHA-256 instead of bcrypt because:
-//  - The raw token has 256-bit entropy → no brute-force risk
-//  - SHA-256 is deterministic → allows DB lookup by hash
-//  - bcrypt is designed for low-entropy passwords; overkill here
+// ── Helpers ───────────────────────────────────────────────────
+
+// SHA-256 token hash — deterministic, allows DB lookup.
+// Safe because the raw token has 256-bit entropy (no brute-force risk).
 const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
+
+// Build branded HTML email body
+const buildResetEmailHtml = (resetUrl) => `
+  <div style="font-family: 'Inter', Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px;">
+    <h2 style="color: #0f172a; font-size: 20px; margin-bottom: 8px;">Reset your password</h2>
+    <p style="color: #475569; font-size: 14px; line-height: 1.6;">
+      You requested a password reset for your Fillr account. Click the button below to set a new password.
+      This link expires in <strong>30 minutes</strong>.
+    </p>
+    <a href="${resetUrl}"
+       style="display: inline-block; margin: 24px 0; padding: 12px 28px;
+              background: #2563eb; color: #fff; font-size: 14px; font-weight: 600;
+              text-decoration: none; border-radius: 8px;">
+      Reset Password
+    </a>
+    <p style="color: #94a3b8; font-size: 12px; line-height: 1.6;">
+      If you didn't request this, you can safely ignore this email.<br>
+      Your password will remain unchanged.
+    </p>
+    <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
+    <p style="color: #cbd5e1; font-size: 11px;">Fillr — Placement Form Autofill</p>
+  </div>
+`;
+
+/**
+ * Send reset email asynchronously with a 5-second timeout.
+ * In development mode, logs the reset URL to console instead.
+ *
+ * This function NEVER throws — all errors are caught and logged.
+ * The token is NOT cleared on failure (user can retry via the link
+ * if it arrives late, or request a new one).
+ *
+ * @param {string} email   - Recipient address
+ * @param {string} resetUrl - Full HTTPS reset link
+ */
+const sendResetEmailAsync = async (email, resetUrl) => {
+  const logCtx = { email: email.replace(/(.{2}).*(@.*)/, '$1***$2'), timestamp: new Date().toISOString() };
+
+  // ── Development fallback ──────────────────────────────────
+  if (!IS_PROD) {
+    console.log('[Reset][DEV] Reset link for %s:', logCtx.email);
+    console.log('[Reset][DEV] %s', resetUrl);
+    console.log('[Reset][DEV] Email NOT sent (development mode).');
+    return;
+  }
+
+  // ── Production: Resend API with 5s timeout ────────────────
+  console.log('[Reset] Sending reset email to %s', logCtx.email);
+
+  try {
+    // Race between Resend send and a 5-second timeout
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Email send timed out after 5 seconds')), 5000)
+    );
+
+    const result = await Promise.race([
+      resend.emails.send({
+        from:    process.env.RESEND_FROM || 'Fillr <onboarding@resend.dev>',
+        to:      email,
+        subject: 'Reset your Fillr password',
+        html:    buildResetEmailHtml(resetUrl),
+      }),
+      timeout,
+    ]);
+
+    if (result.error) {
+      console.error('[Reset] Resend API error for %s — %s', logCtx.email, result.error.message);
+    } else {
+      console.log('[Reset] Email sent to %s — id: %s', logCtx.email, result.data?.id);
+    }
+  } catch (err) {
+    // Log failure but do NOT throw — response already sent to client
+    console.error('[Reset] Email delivery failed for %s — %s', logCtx.email, err.message);
+    // Note: token stays valid in DB. The email may still arrive (network retry),
+    // or the user can request a new reset. We do NOT clear the token here because
+    // the HTTP response has already been sent — we can't signal failure to the client.
+  }
+};
 
 // ── POST /api/auth/forgot-password ────────────────────────────
 exports.forgotPassword = async (req, res, next) => {
@@ -89,67 +167,33 @@ exports.forgotPassword = async (req, res, next) => {
     const user = await User.findOne({ email }).select('+resetPasswordHash +resetPasswordExpiry');
 
     if (!user) {
-      // No user found — return success anyway (anti-enumeration)
       return res.json({ success: true, message: GENERIC_MSG });
     }
 
-    // Google-only users (no password set) CAN use this to set a password
-    // This is intentional — allows them to add local auth as a backup
+    // Google-only users (no password set) CAN use this to add local auth
 
     // Generate random token (32 bytes = 256-bit entropy)
     const rawToken = crypto.randomBytes(32).toString('hex'); // 64 hex chars
     const hashed   = hashToken(rawToken);
     const expiry   = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
 
-    // Store hashed token + expiry on user
+    // Store hashed token + expiry
     user.resetPasswordHash   = hashed;
     user.resetPasswordExpiry = expiry;
-    await user.save({ validateBeforeSave: false }); // Skip full validation — only updating reset fields
+    await user.save({ validateBeforeSave: false });
 
-    // Build reset URL
+    // Build reset URL (always HTTPS in production)
     const frontendUrl = process.env.FRONTEND_URL || 'https://fillr-placement-autofill.netlify.app';
     const resetUrl    = `${frontendUrl}/reset-password.html?token=${rawToken}`;
 
-    // Send email
-    try {
-      const transporter = createTransporter();
-      await transporter.sendMail({
-        from:    `"Fillr" <${process.env.SMTP_USER}>`,
-        to:      email,
-        subject: 'Reset your Fillr password',
-        html: `
-          <div style="font-family: 'Inter', Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px;">
-            <h2 style="color: #0f172a; font-size: 20px; margin-bottom: 8px;">Reset your password</h2>
-            <p style="color: #475569; font-size: 14px; line-height: 1.6;">
-              You requested a password reset for your Fillr account. Click the button below to set a new password.
-              This link expires in <strong>30 minutes</strong>.
-            </p>
-            <a href="${resetUrl}"
-               style="display: inline-block; margin: 24px 0; padding: 12px 28px;
-                      background: #2563eb; color: #fff; font-size: 14px; font-weight: 600;
-                      text-decoration: none; border-radius: 8px;">
-              Reset Password
-            </a>
-            <p style="color: #94a3b8; font-size: 12px; line-height: 1.6;">
-              If you didn't request this, you can safely ignore this email.<br>
-              Your password will remain unchanged.
-            </p>
-            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
-            <p style="color: #cbd5e1; font-size: 11px;">Fillr — Placement Form Autofill</p>
-          </div>
-        `,
-      });
-    } catch (emailErr) {
-      // Email failed — clear the token so it can't be used
-      user.resetPasswordHash   = null;
-      user.resetPasswordExpiry = null;
-      await user.save({ validateBeforeSave: false });
-      console.error('[Reset] Email send failed:', emailErr.message);
-      // Still return generic message — don't reveal that sending failed for this specific email
-      return res.json({ success: true, message: GENERIC_MSG });
-    }
+    // ── Respond IMMEDIATELY — email is fire-and-forget ──────
+    res.json({ success: true, message: GENERIC_MSG });
 
-    return res.json({ success: true, message: GENERIC_MSG });
+    // ── Send email asynchronously (does not block response) ─
+    // .catch() is a safety net — sendResetEmailAsync already handles errors internally
+    sendResetEmailAsync(email, resetUrl).catch((err) => {
+      console.error('[Reset] Unexpected error in async email:', err.message);
+    });
   } catch (err) {
     next(err);
   }
