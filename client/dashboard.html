@@ -723,7 +723,13 @@
 
     try {
       const res = await fetch(API_URL + '/profile', { headers: { Authorization: 'Bearer ' + token } });
-      if (res.status === 401) { window.location.href = 'login.html'; return; }
+      if (res.status === 401) {
+        // Clear stale token to prevent login ↔ dashboard redirect loop
+        localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
+        window.location.href = 'login.html';
+        return;
+      }
       const data = await res.json();
       if (!data.success) throw new Error(data.message || 'Failed to load profile');
 
@@ -1036,7 +1042,7 @@
 
         closeGenModal();
         // Show the raw key
-        dispValue.textContent = data.rawKey;
+        dispValue.textContent = data.key.rawKey;
         dispBackdrop.classList.add('show');
         loadKeys();
       } catch (err) {

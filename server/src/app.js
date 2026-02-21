@@ -77,7 +77,7 @@ app.use((req, _res, next) => {
 // ── Global rate limiter ───────────────────────────────────────
 // Protects against: rate abuse, DDoS, brute force on non-auth routes
 const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 1 * 60 * 1000, // 15 minutes
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
