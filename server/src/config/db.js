@@ -26,7 +26,7 @@ const connectDB = async () => {
   } catch (error) {
     // Log without exposing the full connection string or stack
     console.error('[DB] Connection failed. Verify MONGO_URI environment variable.');
-    // Do not process.exit — allow health check to respond with degraded status
+    process.exit(1);
   }
 };
 

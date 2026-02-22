@@ -46,9 +46,16 @@ const corsOptions = {
   origin: (origin, callback) => {
     // Allow requests with no origin (mobile, Postman, server-to-server)
     if (!origin) return callback(null, true);
-    // Allow whitelisted origins and chrome-extension:// scheme
-    if (ALLOWED_ORIGINS.includes(origin) || /^chrome-extension:\/\//.test(origin)) {
+    // Allow whitelisted origins and the specific Chrome extension
+    if (ALLOWED_ORIGINS.includes(origin)) {
       return callback(null, true);
+    }
+    // Chrome extension — pin to specific ID in production, allow any in dev
+    if (/^chrome-extension:\/\//.test(origin)) {
+      const extId = process.env.EXTENSION_ID;
+      if (!extId || origin === `chrome-extension://${extId}`) {
+        return callback(null, true);
+      }
     }
     callback(new Error(`CORS: origin '${origin}' not allowed`));
   },
@@ -91,9 +98,12 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/user',    userRoutes);
 app.use('/api/keys',    keyRoutes);
 
-// Health check — no sensitive data exposed
+// Health check — includes DB readiness
+const mongoose = require('mongoose');
 app.get('/health', (_req, res) => {
-  res.status(200).json({ status: 'ok' });
+  const dbReady = mongoose.connection.readyState === 1; // 1 = connected
+  const status  = dbReady ? 'ok' : 'degraded';
+  res.status(dbReady ? 200 : 503).json({ status, db: dbReady ? 'connected' : 'disconnected' });
 });
 
 // ── 404 handler ───────────────────────────────────────────────
