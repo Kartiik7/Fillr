@@ -29,11 +29,15 @@
       <div class="success-overlay" id="successOverlay">
         <div class="success-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12"/>
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
           </svg>
         </div>
-        <h3>Account created!</h3>
-        <p>Redirecting to login&hellip;</p>
+        <h3>Check your email!</h3>
+        <p>We sent a verification link to <strong id="registeredEmail"></strong>.</p>
+        <p style="font-size:.875rem;color:var(--text-muted,#94a3b8);margin-top:.5rem;">Click the link in the email to activate your account, then <a href="login.html">log in</a>.</p>
+        <button type="button" class="btn btn-ghost" id="resendVerifyBtn" style="margin-top:1rem;font-size:.875rem;">Didn&rsquo;t get it? Resend</button>
+        <p id="resendVerifyStatus" style="font-size:.825rem;margin-top:.5rem;display:none;"></p>
       </div>
 
       <div class="auth-card-head">
@@ -315,8 +319,9 @@
         });
 
         if (result.data && result.data.success) {
+          document.getElementById('registeredEmail').textContent = email;
           document.getElementById('successOverlay').classList.add('show');
-          setTimeout(() => { window.location.href = 'login.html'; }, 1500);
+          setupResendBtn(email);
         } else {
           showError(result.data?.message || 'Registration failed. Please try again.');
         }
@@ -350,8 +355,9 @@
         termsAccepted: true,
       }).then(result => {
         if (result.data && result.data.success) {
+          document.getElementById('registeredEmail').textContent = '';
           document.getElementById('successOverlay').classList.add('show');
-          setTimeout(() => { window.location.href = 'login.html'; }, 1500);
+          setupResendBtn('');
         } else {
           showError(result.data?.message || 'Google sign-up failed.');
         }
@@ -394,6 +400,31 @@
         showError('Google Sign-In failed to load. Please try again.');
       }
     });
+
+    // ── Resend verification email ─────────────────────────────
+    function setupResendBtn(userEmail) {
+      const btn  = document.getElementById('resendVerifyBtn');
+      const stat = document.getElementById('resendVerifyStatus');
+      btn.addEventListener('click', async () => {
+        if (!userEmail) return;
+        btn.disabled = true;
+        btn.textContent = 'Sending…';
+        stat.style.display = 'none';
+        try {
+          const { data } = await apiRequest('/auth/resend-verification', 'POST', { email: userEmail });
+          stat.style.display = 'block';
+          stat.style.color = '#22c55e';
+          stat.textContent = data.message || 'Verification email resent!';
+        } catch {
+          stat.style.display = 'block';
+          stat.style.color = '#ef4444';
+          stat.textContent = 'Failed to resend. Please try again later.';
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Didn\u2019t get it? Resend";
+        }
+      });
+    }
   </script>
 </body>
 </html>

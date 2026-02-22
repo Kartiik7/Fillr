@@ -202,6 +202,8 @@
           localStorage.setItem('token', result.data.token);
           document.getElementById('successOverlay').classList.add('show');
           setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+        } else if (result.data && result.data.needsVerification) {
+          showError('Please verify your email before logging in. Check your inbox for the verification link.');
         } else {
           showError(result.data?.message || 'Invalid credentials. Please try again.');
         }
@@ -225,23 +227,35 @@
       submitBtn.classList.add('loading');
       submitBtn.disabled = true;
 
-      apiRequest('/auth/google', 'POST', {
-        credential: response.credential,
-        termsAccepted: true,
-      }).then(result => {
-        if (result.data && result.data.success) {
-          localStorage.setItem('token', result.data.token || result.data.accessToken);
-          document.getElementById('successOverlay').classList.add('show');
-          setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
-        } else {
-          showError(result.data?.message || 'Google login failed.');
-        }
-      }).catch(() => {
-        showError('Could not connect to server. Please try again.');
-      }).finally(() => {
-        submitBtn.classList.remove('loading');
-        submitBtn.disabled = false;
-      });
+      const doGoogleLogin = (termsAccepted) => {
+        apiRequest('/auth/google', 'POST', {
+          credential: response.credential,
+          termsAccepted,
+        }).then(result => {
+          if (result.data && result.data.success) {
+            localStorage.setItem('token', result.data.token || result.data.accessToken);
+            document.getElementById('successOverlay').classList.add('show');
+            setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+          } else if (result.data?.requireTerms) {
+            // New Google user — needs to accept terms first
+            if (confirm('To create your Fillr account, you must accept the Terms & Conditions and Privacy Policy.\n\nTerms: https://fillr-placement-autofill.netlify.app/terms.html\nPrivacy: https://fillr-placement-autofill.netlify.app/privacy.html\n\nDo you accept?')) {
+              doGoogleLogin(true);
+              return; // Don't reset loading state yet
+            } else {
+              showError('You must accept the Terms & Conditions to create an account.');
+            }
+          } else {
+            showError(result.data?.message || 'Google login failed.');
+          }
+        }).catch(() => {
+          showError('Could not connect to server. Please try again.');
+        }).finally(() => {
+          submitBtn.classList.remove('loading');
+          submitBtn.disabled = false;
+        });
+      };
+
+      doGoogleLogin(false); // First attempt without terms — existing users pass, new users get requireTerms
     }
 
     // Initialize Google Identity Services
