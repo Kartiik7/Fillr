@@ -69,6 +69,13 @@ const userSchema = new mongoose.Schema({
   // Both fields are cleared immediately after a successful reset.
   resetPasswordHash:   { type: String,  default: null, select: false },
   resetPasswordExpiry: { type: Date,    default: null, select: false },
+  // ── Email verification ────────────────────────────────────
+  // isVerified gates login for email/password users.
+  // Google OAuth users are auto-verified (Google verifies their email).
+  // Token is SHA-256 hashed (same pattern as password reset).
+  isVerified:              { type: Boolean, default: false },
+  verificationTokenHash:   { type: String,  default: null, select: false },
+  verificationTokenExpiry: { type: Date,    default: null, select: false },
 }, { timestamps: true });
 
 // ── Indexes ───────────────────────────────────────────────────
