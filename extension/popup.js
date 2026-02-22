@@ -1,0 +1,620 @@
+/**
+ * Popup Script - UI Logic and Messaging
+ * Handles user interactions and communication with content script
+ */
+
+// DOM Elements
+const scanBtn = document.getElementById('scanBtn');
+const autofillBtn = document.getElementById('autofillBtn');
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+const resultsSection = document.getElementById('resultsSection');
+const resultsContent = document.getElementById('resultsContent');
+const tokenInput = document.getElementById('tokenInput');
+const saveTokenBtn = document.getElementById('saveTokenBtn');
+const confirmationsSection = document.getElementById('confirmationsSection');
+const confirmationsContent = document.getElementById('confirmationsContent');
+const applyConfirmationsBtn = document.getElementById('applyConfirmationsBtn');
+
+// ── Security: no direct API calls from popup ──────────────────
+// All API communication goes through background.js to prevent
+// token exposure in popup context. See FETCH_PROFILE message.
+
+/**
+ * Sanitize a string for safe insertion into innerHTML.
+ * Prevents XSS from page titles, field labels, or any external text.
+ * @param {string} str - Untrusted string
+ * @returns {string} HTML-escaped string
+ */
+const esc = (str) => {
+  if (!str) return '';
+  const el = document.createElement('span');
+  el.textContent = String(str);
+  return el.innerHTML;
+};
+
+// Store pending confirmations and profile globally
+let pendingConfirmationsData = [];
+let currentProfile = null;
+
+/**
+ * Adaptive Memory System - Helper Functions
+ */
+
+/**
+ * Get current domain from active tab
+ * @returns {Promise<string|null>} Domain name or null
+ */
+const getCurrentDomain = () => {
+  return new Promise((resolve) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]) {
+        try {
+          const url = new URL(tabs[0].url);
+          resolve(url.hostname);
+        } catch (error) {
+          resolve(null);
+        }
+      } else {
+        resolve(null);
+      }
+    });
+  });
+};
+
+/**
+ * Get all site mappings from storage
+ * @returns {Promise<Object>} Site mappings object
+ */
+const getSiteMappings = () => {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(['siteMappings'], (result) => {
+      resolve(result.siteMappings || {});
+    });
+  });
+};
+
+/**
+ * Save a single mapping for a domain
+ * @param {string} domain - Domain name
+ * @param {string} label - Normalized field label
+ * @param {string} selectedKey - FIELD_MAP key
+ */
+const saveSiteMapping = async (domain, label, selectedKey) => {
+  const mappings = await getSiteMappings();
+  
+  if (!mappings[domain]) {
+    mappings[domain] = {};
+  }
+  
+  mappings[domain][label] = selectedKey;
+  
+  await chrome.storage.local.set({ siteMappings: mappings });
+};
+
+/**
+ * Clear all mappings for a domain
+ * @param {string} domain - Domain name
+ */
+const clearSiteMemory = async (domain) => {
+  const mappings = await getSiteMappings();
+  delete mappings[domain];
+  await chrome.storage.local.set({ siteMappings: mappings });
+};
+
+/**
+ * Normalize label text for consistent storage
+ * @param {string} text - Label text
+ * @returns {string} Normalized text
+ */
+const normalizeLabel = (text) => {
+  return text.toLowerCase().trim();
+};
+
+
+/**
+ * Token Storage Functions
+ */
+
+/**
+ * Save extension API key via background script (secure storage)
+ * The background script handles: store key → authenticate → store JWT
+ * @param {string} apiKey - Extension secret key
+ * @returns {Promise<Object>} Result from background
+ */
+const saveApiKey = (apiKey) => {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage({ type: 'SAVE_API_KEY', apiKey }, resolve);
+  });
+};
+
+/**
+ * Retrieve authentication token from chrome.storage.local
+ * @returns {Promise<string|null>} The stored token or null
+ */
+const getToken = async () => {
+  try {
+    const result = await chrome.storage.local.get(['jwtToken']);
+    return result.jwtToken || null;
+  } catch (error) {
+    console.error('[Popup] Error retrieving token:', error);
+    return null;
+  }
+};
+
+/**
+ * Fetch user profile via background service worker (secure proxy).
+ * The JWT never leaves chrome.storage.local — background.js handles
+ * the Authorization header internally. Token is NEVER in popup context.
+ * @returns {Promise<Object>} User profile data
+ */
+const fetchProfile = () => {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage({ type: 'FETCH_PROFILE' }, (res) => {
+      if (chrome.runtime.lastError) {
+        return reject(new Error(chrome.runtime.lastError.message));
+      }
+      if (res && res.success) {
+        // Background returns { success, data: { profile, email } }
+        return resolve(res.data.profile);
+      }
+      const msg = (res && res.message) || 'Failed to fetch profile.';
+      if (res && res.code === 'UNAUTHORIZED') {
+        return reject(new Error('Session expired. Please login again.'));
+      }
+      reject(new Error(msg));
+    });
+  });
+};
+
+/**
+ * Check login status and update UI
+ */
+const checkLoginStatus = async () => {
+  const token = await getToken();
+  const logoutBtn = document.getElementById('logoutBtn');
+  const authDetail = document.getElementById('authDetail');
+
+  if (token) {
+    statusDot.className = 'status-dot logged-in';
+    statusText.textContent = 'Connected';
+    logoutBtn.style.display = 'block';
+    authDetail.textContent = '';
+  } else {
+    statusDot.className = 'status-dot logged-out';
+    statusText.textContent = 'Not Connected';
+    logoutBtn.style.display = 'none';
+    authDetail.textContent = '';
+  }
+};
+
+/**
+ * Update login status (wrapper for checkLoginStatus)
+ */
+const updateLoginStatus = () => {
+  checkLoginStatus();
+};
+
+/**
+ * Inject content script into the active tab if not already present.
+ * The manifest auto-injects on Google Forms; for other pages we use
+ * the scripting API with activeTab permission (user-initiated click).
+ * @param {number} tabId - Tab to inject into
+ */
+const ensureContentScript = async (tabId) => {
+  try {
+    // Ping the content script — if it responds, injection is unnecessary
+    await chrome.tabs.sendMessage(tabId, { action: 'PING' });
+  } catch {
+    // Content script not loaded — inject it now (requires activeTab)
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ['content.js'],
+    });
+  }
+};
+
+/**
+ * Scan Page Button Handler
+ */
+const handleScanPage = async () => {
+  
+  try {
+    // Disable button during scan
+    scanBtn.disabled = true;
+    scanBtn.textContent = 'Scanning...';
+    
+    // Get active tab
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    
+    if (!tab) {
+      alert('No active tab found');
+      return;
+    }
+
+    // Inject content script if needed (non-Google-Forms pages)
+    await ensureContentScript(tab.id);
+    
+    const response = await chrome.tabs.sendMessage(tab.id, { action: 'SCAN_PAGE' });
+    
+    if (response && response.success) {
+      displayResults(response);
+    } else {
+      alert('Failed to scan page. Make sure you are on a supported page.');
+    }
+    
+  } catch (error) {
+    console.error('[Popup] Error scanning page:', error);
+    alert(`Error: ${error.message}\n\nMake sure you're on a valid web page.`);
+  } finally {
+    // Re-enable button
+    scanBtn.disabled = false;
+    scanBtn.innerHTML = '<span class="btn-icon">🔍</span> Scan Page';
+  }
+};
+
+/**
+ * Save API Key Button Handler
+ */
+const handleSaveToken = async () => {
+  const key = tokenInput.value.trim();
+  
+  if (!key) {
+    alert('Please paste your extension secret key');
+    return;
+  }
+
+  // Soft-launch keys use fillr_XXXXXX-XXXXXX-XXXXXX format (~25 chars)
+  if (key.length < 10) {
+    alert('Invalid key format. Please paste the full key from your dashboard.');
+    return;
+  }
+  
+  try {
+    saveTokenBtn.disabled = true;
+    saveTokenBtn.textContent = 'Connecting...';
+
+    const result = await saveApiKey(key);
+    
+    if (result && result.success) {
+      tokenInput.value = '';
+      alert('✅ Connected successfully! Your extension is now authenticated.');
+      updateLoginStatus();
+    } else {
+      alert(`❌ Connection failed: ${result?.message || 'Invalid or expired key.'}`);
+    }
+  } catch (error) {
+    alert(`Failed to connect: ${error.message}`);
+  } finally {
+    saveTokenBtn.disabled = false;
+    saveTokenBtn.textContent = 'Connect';
+  }
+};
+
+/**
+ * Display pending confirmations in UI
+ * @param {Array} confirmations - Array of pending confirmation objects
+ * @param {Object} profile - User profile for reference
+ */
+const displayConfirmations = (confirmations, profile) => {
+  if (!confirmations || confirmations.length === 0) {
+    confirmationsSection.style.display = 'none';
+    return;
+  }
+  
+  // Store globally for later use
+  pendingConfirmationsData = confirmations;
+  currentProfile = profile;
+  
+  // Get all available field keys from FIELD_MAP (we'll need to import this or hardcode)
+  const fieldKeys = [
+    'name', 'email', 'phone', 'gender', 'dob', 'age', 'permanent_address',
+    'tenth_percentage', 'twelfth_percentage', 'diploma_percentage', 'graduation_percentage', 'pg_percentage', 'cgpa',
+    'active_backlog', 'backlog_count', 'gap_months',
+    'uid', 'university_roll_number', 
+    'college_name', 'batch', 'program', 'stream',
+    'position_applying',
+    'github', 'linkedin', 'portfolio'
+  ];
+  
+  confirmationsContent.innerHTML = '';
+  
+  confirmations.forEach((conf, index) => {
+    const confItem = document.createElement('div');
+    confItem.className = 'confirmation-item';
+    confItem.innerHTML = `
+      <div class="confirmation-field">
+        <label class="confirmation-label">
+          <strong>${esc(conf.labelText)}</strong>
+          <span class="confidence-badge">${(conf.confidence * 100).toFixed(0)}%</span>
+        </label>
+        <select class="confirmation-select" data-field-id="${conf.fieldId}">
+          <option value="">-- Skip this field --</option>
+          ${fieldKeys.map(key => `
+            <option value="${key}" ${key === conf.suggestedKey ? 'selected' : ''}>
+              ${key} ${key === conf.suggestedKey ? '(suggested)' : ''}
+            </option>
+          `).join('')}
+        </select>
+      </div>
+    `;
+    confirmationsContent.appendChild(confItem);
+  });
+  
+  confirmationsSection.style.display = 'block';
+};
+
+/**
+ * Handle Apply Confirmations Button Click
+ */
+const handleApplyConfirmations = async () => {
+  
+  try {
+    applyConfirmationsBtn.disabled = true;
+    applyConfirmationsBtn.textContent = 'Applying...';
+    
+    // Collect user selections
+    const confirmations = [];
+    const selects = confirmationsContent.querySelectorAll('.confirmation-select');
+    
+    // Get current domain for saving learned mappings
+    const domain = await getCurrentDomain();
+    
+    selects.forEach(select => {
+      const fieldId = select.getAttribute('data-field-id');
+      const selectedKey = select.value;
+      
+      if (selectedKey) {
+        // Find the original confirmation to get labelText
+        const conf = pendingConfirmationsData.find(c => c.fieldId === fieldId);
+        
+        if (conf && domain) {
+          const normalizedLabel = normalizeLabel(conf.labelText);
+          // Save learned mapping for this domain
+          saveSiteMapping(domain, normalizedLabel, selectedKey);
+        }
+        
+        confirmations.push({
+          fieldId,
+          selectedKey,
+          profile: currentProfile
+        });
+      }
+    });
+    
+    if (confirmations.length === 0) {
+      alert('No fields selected for confirmation');
+      return;
+    }
+    
+    // Get active tab
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    
+    const response = await chrome.tabs.sendMessage(tab.id, {
+      action: 'CONFIRM_AUTOFILL',
+      confirmations: confirmations
+    });
+    
+    if (response && response.status === 'confirmed') {
+      alert(`✅ Confirmed ${response.confirmedCount} field(s)!`);
+      confirmationsSection.style.display = 'none';
+      pendingConfirmationsData = [];
+      // Refresh learned mappings display
+      displayLearnedMappings();
+    }
+    
+  } catch (error) {
+    console.error('[Popup] Error applying confirmations:', error);
+    alert(`Error: ${error.message}`);
+  } finally {
+    applyConfirmationsBtn.disabled = false;
+    applyConfirmationsBtn.textContent = 'Apply Confirmed Autofill';
+  }
+};
+
+/**
+ * Autofill Page Button Handler
+ */
+const handleAutofillPage = async () => {
+  
+  try {
+    // Disable button during autofill
+    autofillBtn.disabled = true;
+    autofillBtn.textContent = 'Autofilling...';
+    
+    // Check if user is logged in
+    const token = await getToken();
+    
+    if (!token) {
+      alert('❌ Not Logged In\n\nPlease paste your secret key and click "Connect" first.');
+      return;
+    }
+    
+    // Fetch profile via background proxy — token never enters popup context
+    const profileData = await fetchProfile();
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    
+    if (!tab) {
+      alert('No active tab found');
+      return;
+    }
+
+    // Inject content script if needed (non-Google-Forms pages)
+    await ensureContentScript(tab.id);
+    
+    // Get current domain and learned mappings
+    const domain = await getCurrentDomain();
+    const allMappings = await getSiteMappings();
+    const siteMappings = allMappings[domain] || {};
+    
+    const response = await chrome.tabs.sendMessage(tab.id, {
+      action: 'AUTOFILL_PAGE',
+      profile: profileData,
+      domain: domain,
+      siteMappings: siteMappings
+    });
+    
+    if (response && response.status === 'completed') {
+      const { autoFilledCount, pendingConfirmations, filledFields, skippedFields } = response;
+      
+      // Display pending confirmations if any
+      if (pendingConfirmations && pendingConfirmations.length > 0) {
+        displayConfirmations(pendingConfirmations, profileData);
+      }
+      
+      // Show success message
+      let message = `✅ Autofill Complete!\n\n`;
+      message += `Auto-filled: ${autoFilledCount} field(s)\n`;
+      
+      if (pendingConfirmations && pendingConfirmations.length > 0) {
+        message += `Pending confirmation: ${pendingConfirmations.length} field(s)\n\n`;
+        message += `Please review and confirm the pending fields below.`;
+      }
+      
+      alert(message);
+    } else {
+      console.error('[Popup] Invalid response from content script');
+      alert('Failed to autofill page. Check console for details.');
+    }
+    
+  } catch (error) {
+    console.error('[Popup] Error autofilling page:', error);
+    
+    if (error.message.includes('Session expired')) {
+      alert(`❌ ${error.message}\n\nPlease get a new token from the website.`);
+    } else {
+      alert(`Error: ${error.message}\n\nMake sure the backend server is running.`);
+    }
+  } finally {
+    // Re-enable button
+    autofillBtn.disabled = false;
+    autofillBtn.innerHTML = '<span class="btn-icon">✨</span> Autofill Page';
+  }
+};
+
+/**
+ * Display scan results in popup
+ * @param {Object} response - Response from content script
+ */
+const displayResults = (response) => {
+  const { fields, url, title } = response;
+  
+  // Show results section
+  resultsSection.style.display = 'block';
+  
+  // Build results HTML — all external text escaped to prevent XSS
+  let html = `
+    <div class="result-header">
+      <p><strong>Page:</strong> ${esc(title)}</p>
+      <p><strong>Fields Found:</strong> ${fields.length}</p>
+    </div>
+    <div class="fields-list">
+  `;
+  
+  if (fields.length === 0) {
+    html += '<p class="no-fields">No form fields detected on this page.</p>';
+  } else {
+    fields.forEach((field, index) => {
+      html += `
+        <div class="field-item">
+          <div class="field-number">#${index + 1}</div>
+          <div class="field-details">
+            ${field.label ? `<p><strong>Label:</strong> ${esc(field.label)}</p>` : ''}
+            ${field.placeholder ? `<p><strong>Placeholder:</strong> ${esc(field.placeholder)}</p>` : ''}
+            ${field.name ? `<p><strong>Name:</strong> ${esc(field.name)}</p>` : ''}
+            ${field.id ? `<p><strong>ID:</strong> ${esc(field.id)}</p>` : ''}
+            <p><strong>Type:</strong> ${esc(field.type)}</p>
+          </div>
+        </div>
+      `;
+    });
+  }
+  
+  html += '</div>';
+  resultsContent.innerHTML = html;
+};
+
+/**
+ * Display learned mappings for the current site
+ */
+const displayLearnedMappings = async () => {
+  const domain = await getCurrentDomain();
+  const mappings = await getSiteMappings();
+  const siteMappings = mappings[domain] || {};
+  
+  const learnedSection = document.getElementById('learnedSection');
+  const learnedContent = document.getElementById('learnedContent');
+  
+  const entries = Object.entries(siteMappings);
+  
+  if (entries.length === 0) {
+    learnedSection.style.display = 'none';
+    return;
+  }
+  
+  learnedContent.innerHTML = entries.map(([label, key]) => `
+    <div class="learned-item">
+      <span class="learned-label">${esc(label)}</span>
+      <span class="learned-arrow">→</span>
+      <span class="learned-key">${esc(key)}</span>
+    </div>
+  `).join('');
+  
+  learnedSection.style.display = 'block';
+};
+
+/**
+ * Handle Clear Memory Button Click
+ */
+const handleClearMemory = async () => {
+  const domain = await getCurrentDomain();
+  
+  if (!domain) {
+    alert('Cannot determine current domain');
+    return;
+  }
+  
+  if (confirm(`Clear all learned mappings for ${domain}?`)) {
+    await clearSiteMemory(domain);
+    displayLearnedMappings();
+    alert('✅ Memory cleared for this site');
+  }
+};
+
+/**
+ * Handle logout / disconnect
+ */
+const handleLogout = () => {
+  if (!confirm('Disconnect extension? You will need to re-enter your key.')) return;
+  chrome.runtime.sendMessage({ type: 'CLEAR_TOKEN' }, () => {
+    updateLoginStatus();
+    alert('✅ Disconnected.');
+  });
+};
+
+/**
+ * Initialize popup
+ */
+const init = () => {
+  
+  // Check login status on load
+  checkLoginStatus();
+  
+  // Display learned mappings for current site
+  displayLearnedMappings();
+  
+  // Add event listeners
+  scanBtn.addEventListener('click', handleScanPage);
+  autofillBtn.addEventListener('click', handleAutofillPage);
+  saveTokenBtn.addEventListener('click', handleSaveToken);
+  applyConfirmationsBtn.addEventListener('click', handleApplyConfirmations);
+  document.getElementById('clearMemoryBtn').addEventListener('click', handleClearMemory);
+  document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+};
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}

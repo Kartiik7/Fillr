@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "Fillr – Placement Form Autofill",
+  "version": "1.0.0",
+  "description": "Automatically fill placement and recruitment forms with your saved profile data. Works with Google Forms and standard HTML forms.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://fillr-gqyp.onrender.com/*",
+    "https://docs.google.com/forms/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://docs.google.com/forms/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none';"
+  }
+}
