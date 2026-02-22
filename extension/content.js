@@ -527,20 +527,37 @@ async function fillGoogleDropdownHybrid(element, profileValue, fieldConfig) {
 
   const options = document.querySelectorAll('div[role="option"]');
 
-  // Layer 1: Alias match (deterministic)
+  // Helper to check if target matches option (exact or whole word)
+  const matchesTarget = (optionText, target) => {
+    if (!target || target.length === 0) return false;
+    if (optionText === target) return true;
+    const wordBoundary = new RegExp(`\\b${target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+    return wordBoundary.test(optionText);
+  };
+
+  // Layer 1a: Exact match first (highest priority)
   for (const option of options) {
     const optionText = normalizeOption(option.innerText);
-    // Skip empty option texts
     if (!optionText || optionText.length === 0) continue;
     
     for (const target of targetTexts) {
-      // Both must be non-empty for valid comparison
-      if (target && optionText.includes(target)) {
+      if (optionText === target) {
         option.click();
-        if (DEBUG)
-          log(
-            `Google Dropdown Alias Match: "${profileValue}" -> "${option.innerText}"`,
-          );
+        if (DEBUG) log(`Google Dropdown Exact Match: "${profileValue}" -> "${option.innerText}"`);
+        return true;
+      }
+    }
+  }
+
+  // Layer 1b: Whole word match (second priority)
+  for (const option of options) {
+    const optionText = normalizeOption(option.innerText);
+    if (!optionText || optionText.length === 0) continue;
+    
+    for (const target of targetTexts) {
+      if (target && target.length > 1 && matchesTarget(optionText, target)) {
+        option.click();
+        if (DEBUG) log(`Google Dropdown Word Match: "${profileValue}" -> "${option.innerText}"`);
         return true;
       }
     }
@@ -606,21 +623,41 @@ function fillGoogleRadioHybrid(profileValue, fieldConfig, container = null) {
   const scope = container || document;
   const radios = scope.querySelectorAll('[role="radio"]');
 
-  // Layer 1: Alias match (deterministic)
+  // Helper to check if target matches label (exact or whole word)
+  const matchesTarget = (label, target) => {
+    if (!target || target.length === 0) return false;
+    // Exact match
+    if (label === target) return true;
+    // Whole word match (target is a complete word in label)
+    const wordBoundary = new RegExp(`\\b${target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+    return wordBoundary.test(label);
+  };
+
+  // Layer 1a: Exact match first (highest priority)
   for (const radio of radios) {
     const labelRaw = getGoogleRadioOptionText(radio);
     const label = normalizeOption(labelRaw);
-    // Skip empty labels - they cause false matches
     if (!label || label.length === 0) continue;
     
     for (const target of targetTexts) {
-      // Both label and target must be non-empty for valid comparison
-      if (target && label.includes(target)) {
+      if (label === target) {
         radio.click();
-        if (DEBUG)
-          log(
-            `Google Radio Alias Match: "${profileValue}" -> "${labelRaw}"`,
-          );
+        if (DEBUG) log(`Google Radio Exact Match: "${profileValue}" -> "${labelRaw}"`);
+        return true;
+      }
+    }
+  }
+
+  // Layer 1b: Whole word match (second priority)
+  for (const radio of radios) {
+    const labelRaw = getGoogleRadioOptionText(radio);
+    const label = normalizeOption(labelRaw);
+    if (!label || label.length === 0) continue;
+    
+    for (const target of targetTexts) {
+      if (target && target.length > 1 && matchesTarget(label, target)) {
+        radio.click();
+        if (DEBUG) log(`Google Radio Word Match: "${profileValue}" -> "${labelRaw}"`);
         return true;
       }
     }
