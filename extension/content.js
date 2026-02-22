@@ -416,28 +416,53 @@ const getGoogleRadioOptionText = (radio) => {
     return radio.dataset.value;
   }
   
-  // Method 2: Check aria-label
+  // Method 2: Check aria-label (most reliable for Google Forms)
   if (radio.getAttribute('aria-label')) {
     return radio.getAttribute('aria-label');
   }
   
-  // Method 3: Look for the deepest text content (Google Forms wraps text in nested divs/spans)
-  // Find all text nodes and spans within the radio
+  // Method 3: Check data-answer-value (Google Forms uses this)
+  if (radio.getAttribute('data-answer-value')) {
+    return radio.getAttribute('data-answer-value');
+  }
+  
+  // Method 4: Look for span with dir="auto" (Google Forms option text pattern)
+  const spanWithDir = radio.querySelector('span[dir="auto"]');
+  if (spanWithDir?.innerText?.trim()) {
+    return spanWithDir.innerText.trim();
+  }
+  
+  // Method 5: Look for any span with text
+  const spans = radio.querySelectorAll('span');
+  for (const span of spans) {
+    const text = span.innerText?.trim();
+    if (text && text.length > 0 && text.length < 100) {
+      return text;
+    }
+  }
+  
+  // Method 6: Look for the deepest text content
   const textContent = radio.innerText?.trim();
   if (textContent) {
     return textContent;
   }
   
-  // Method 4: Check next sibling for label text
+  // Method 7: Check next sibling for label text (common pattern)
   const nextSibling = radio.nextElementSibling;
   if (nextSibling) {
     const siblingText = nextSibling.innerText?.trim();
     if (siblingText) return siblingText;
   }
   
-  // Method 5: Check parent's text excluding the radio itself
+  // Method 8: Check parent container's content-desc or text (for label divs)
   const parent = radio.parentElement;
   if (parent) {
+    // Look for content description
+    const contentDesc = parent.querySelector('[data-value]');
+    if (contentDesc?.getAttribute('data-value')) {
+      return contentDesc.getAttribute('data-value');
+    }
+    
     // Clone and remove radio, get remaining text
     const clone = parent.cloneNode(true);
     const radioInClone = clone.querySelector('[role="radio"]');
