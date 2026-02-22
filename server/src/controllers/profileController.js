@@ -47,6 +47,7 @@ const pickLinks = (src = {}) => ({
   github:    src.github,
   linkedin:  src.linkedin,
   portfolio: src.portfolio,
+  resume:    src.resume,
 });
 
 const pickEducation = (src = {}) => ({
@@ -58,6 +59,7 @@ const pickEducation = (src = {}) => ({
 
 const pickPlacement = (src = {}) => ({
   position_applying: src.position_applying,
+  job_location:      src.job_location,
 });
 
 // ── Helpers ───────────────────────────────────────────────────

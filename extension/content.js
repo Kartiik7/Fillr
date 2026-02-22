@@ -1104,7 +1104,7 @@ const FIELD_MAP = {
     negative: ["history", "count", "number", "no of"],
     options: {
       Yes: ["yes", "y", "true", "active", "have backlogs"],
-      No: ["no", "n", "false", "clear", "all clear", "none", "0"],
+      No: ["no", "n", "false", "clear", "all clear", "none", "0", "nil"],
     },
   },
   backlog_count: {
@@ -1134,8 +1134,8 @@ const FIELD_MAP = {
   // --- EDUCATION METADATA ---
   batch: {
     path: "education.batch",
-    primary: ["batch", "passing year", "year of passing"],
-    secondary: ["passout year"],
+    primary: ["batch", "passing year", "year of passing", "passing out batch", "passout batch"],
+    secondary: ["passout year", "pass out year", "passing out year"],
     generic: ["year"],
     negative: [],
     options: {
@@ -1150,15 +1150,18 @@ const FIELD_MAP = {
   },
   program: {
     path: "education.program",
-    primary: ["program", "degree", "course"],
-    secondary: ["qualification"],
+    primary: ["program", "degree", "course", "current course"],
+    secondary: ["qualification", "pursuing"],
     generic: ["be", "btech", "mtech"],
     negative: [],
     options: {
-      BE: ["b.e", "bachelor of engineering", "be"],
-      "B.Tech": ["btech", "b.tech", "bachelor of technology"],
-      "M.Tech": ["mtech", "m.tech", "master of technology"],
+      "B.E": ["b.e", "b.e.", "be", "bachelor of engineering"],
+      "B.E+M.E (Integrated)": ["b.e+m.e", "integrated", "b.e + m.e", "dual degree"],
+      "B.Tech": ["btech", "b.tech", "b.tech.", "bachelor of technology"],
+      "M.Tech": ["mtech", "m.tech", "m.tech.", "master of technology"],
       MCA: ["mca", "master of computer applications"],
+      BCA: ["bca", "bachelor of computer applications"],
+      MBA: ["mba", "master of business administration"],
     },
   },
   stream: {
@@ -1214,6 +1217,20 @@ const FIELD_MAP = {
     primary: ["linkedin", "linkedin profile", "linkedin url"],
     secondary: ["linked in"],
     generic: ["profile"],
+    negative: [],
+  },
+  resume: {
+    path: "links.resume",
+    primary: ["resume", "resume link", "public resume link", "cv", "cv link"],
+    secondary: ["curriculum vitae", "resume url", "resume drive link"],
+    generic: ["link"],
+    negative: ["upload", "attach", "file"],
+  },
+  job_location: {
+    path: "placement.job_location",
+    primary: ["job location", "job location preference", "preferred location", "location preference"],
+    secondary: ["work location", "preferred work location"],
+    generic: ["location"],
     negative: [],
   },
 };

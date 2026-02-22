@@ -43,6 +43,7 @@ const userSchema = new mongoose.Schema({
       github: { type: String, default: '' },
       linkedin: { type: String, default: '' },
       portfolio: { type: String, default: '' },
+      resume: { type: String, default: '' },
     },
     // New fields for Placement Support
     education: {
@@ -53,6 +54,7 @@ const userSchema = new mongoose.Schema({
     },
     placement: {
       position_applying: { type: String, default: '' },
+      job_location: { type: String, default: '' },
     },
   },
   // ── Legal consent (required for GDPR / SaaS compliance) ──

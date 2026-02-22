@@ -351,7 +351,7 @@
             </div>
           </div>
           <div class="db-card-hdr-right">
-            <span class="db-card-badge" id="badge-placement">0 / 4</span>
+            <span class="db-card-badge" id="badge-placement">0 / 6</span>
             <svg class="db-card-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </div>
         </div>
@@ -397,6 +397,20 @@
                 <label class="db-fl-label" for="portfolio">Portfolio / Website URL</label>
                 <div class="db-fl-bar"></div>
                 <div class="db-fl-error" id="portfolio-err"></div>
+              </div>
+              <div class="db-fl db-col-full">
+                <input class="db-fl-input" type="url" id="resume" name="resume" placeholder=" ">
+                <label class="db-fl-label" for="resume">Resume Link (Google Drive / Dropbox)</label>
+                <div class="db-fl-bar"></div>
+                <div class="db-fl-url">drive.google.com/file/d/...</div>
+                <div class="db-fl-error" id="resume-err"></div>
+              </div>
+              <div class="db-fl db-col-full">
+                <input class="db-fl-input" type="text" id="job_location" name="job_location" placeholder=" ">
+                <label class="db-fl-label" for="job_location">Job Location Preference</label>
+                <div class="db-fl-bar"></div>
+                <div class="db-fl-hint">e.g., Anywhere, Remote, Bangalore, Delhi NCR</div>
+                <div class="db-fl-error" id="job_location-err"></div>
               </div>
             </div>
           </div>
@@ -575,7 +589,7 @@
     'graduation_percentage','cgpa','pg_percentage',
     'active_backlog','backlog_count','gap_months',
     'college_name','program','stream','batch',
-    'position_applying','github','linkedin','portfolio'
+    'position_applying','job_location','github','linkedin','portfolio','resume'
   ];
 
   let _snapshot = '';
@@ -613,7 +627,7 @@
     personal:   ['uid','name','phone','gender','dob','age','permanent_address'],
     academic:   ['tenth_percentage','twelfth_percentage','graduation_percentage','cgpa','pg_percentage','gap_months'],
     education:  ['college_name','program','stream','batch'],
-    placement:  ['position_applying','github','linkedin','portfolio']
+    placement:  ['position_applying','job_location','github','linkedin','portfolio','resume']
   };
 
   function fieldFilled(id) {
@@ -782,9 +796,11 @@
       setSelect('batch', ed.batch);
 
       setSelect('position_applying', pl.position_applying);
+      setValue('job_location', pl.job_location);
       setValue('github', lk.github);
       setValue('linkedin', lk.linkedin);
       setValue('portfolio', lk.portfolio);
+      setValue('resume', lk.resume);
 
       // Set hero email / menu email
       const emailVal = data.email || ps.email || '';
@@ -838,11 +854,15 @@
           stream: v('stream'),
           batch: v('batch')
         },
-        placement: { position_applying: v('position_applying') },
+        placement: { 
+          position_applying: v('position_applying'),
+          job_location: v('job_location')
+        },
         links: {
           github: v('github'),
           linkedin: v('linkedin'),
-          portfolio: v('portfolio')
+          portfolio: v('portfolio'),
+          resume: v('resume')
         }
       }
     };
