@@ -22,7 +22,7 @@ const Joi      = require('joi');
 const { Resend } = require('resend');
 const User     = require('../models/User');
 
-const IS_PROD = process.env.NODE_ENV === 'production';
+const HAS_RESEND_KEY = !!process.env.RESEND_API_KEY;
 const resend  = new Resend(process.env.RESEND_API_KEY || '');
 
 // ── Helpers ───────────────────────────────────────────────────
@@ -59,9 +59,10 @@ const buildVerificationEmailHtml = (verifyUrl) => `
 const sendVerificationEmailAsync = async (email, verifyUrl) => {
   const masked = email.replace(/(.{2}).*(@.*)/, '$1***$2');
 
-  if (!IS_PROD) {
-    console.log('[Verify][DEV] Verification link for %s:', masked);
-    console.log('[Verify][DEV] %s', verifyUrl);
+  if (!HAS_RESEND_KEY) {
+    console.log('[Verify][NO-KEY] Verification link for %s:', masked);
+    console.log('[Verify][NO-KEY] %s', verifyUrl);
+    console.log('[Verify][NO-KEY] Email NOT sent (RESEND_API_KEY not configured).');
     return;
   }
 

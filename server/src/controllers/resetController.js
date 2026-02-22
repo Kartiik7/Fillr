@@ -39,13 +39,18 @@ const { Resend } = require('resend');
 const User     = require('../models/User');
 
 // ── Resend initialisation ────────────────────────────────────
-// Instantiate once at module load. In dev mode the key is optional —
-// emails are logged to console instead.
-const IS_PROD = process.env.NODE_ENV === 'production';
-const resend  = new Resend(process.env.RESEND_API_KEY || '');
+// Instantiate once at module load. Emails are sent if RESEND_API_KEY exists,
+// otherwise logged to console (for local development).
+const HAS_RESEND_KEY = !!process.env.RESEND_API_KEY;
+const resend = new Resend(process.env.RESEND_API_KEY || '');
 
-if (!process.env.RESEND_API_KEY && IS_PROD) {
-  console.error('[Reset] RESEND_API_KEY is not set — password reset emails will fail in production.');
+// Startup logging
+console.log('[Reset] RESEND_API_KEY:', HAS_RESEND_KEY ? 'SET' : 'NOT SET');
+console.log('[Reset] RESEND_FROM:', process.env.RESEND_FROM || '(using default)');
+console.log('[Reset] NODE_ENV:', process.env.NODE_ENV || '(not set)');
+
+if (!HAS_RESEND_KEY) {
+  console.warn('[Reset] No RESEND_API_KEY — password reset emails will be logged to console only.');
 }
 
 // ── Input schemas ─────────────────────────────────────────────
@@ -110,15 +115,15 @@ const buildResetEmailHtml = (resetUrl) => `
 const sendResetEmailAsync = async (email, resetUrl) => {
   const logCtx = { email: email.replace(/(.{2}).*(@.*)/, '$1***$2'), timestamp: new Date().toISOString() };
 
-  // ── Development fallback ──────────────────────────────────
-  if (!IS_PROD) {
-    console.log('[Reset][DEV] Reset link for %s:', logCtx.email);
-    console.log('[Reset][DEV] %s', resetUrl);
-    console.log('[Reset][DEV] Email NOT sent (development mode).');
+  // ── No API key — log to console only ──────────────────────
+  if (!HAS_RESEND_KEY) {
+    console.log('[Reset][NO-KEY] Reset link for %s:', logCtx.email);
+    console.log('[Reset][NO-KEY] %s', resetUrl);
+    console.log('[Reset][NO-KEY] Email NOT sent (RESEND_API_KEY not configured).');
     return;
   }
 
-  // ── Production: Resend API with 5s timeout ────────────────
+  // ── Send via Resend API with 5s timeout ───────────────────
   console.log('[Reset] Sending reset email to %s', logCtx.email);
 
   try {

@@ -24,6 +24,10 @@ const keyRoutes     = require('./routes/keyRoutes');
 const isProd = process.env.NODE_ENV === 'production';
 const app    = express();
 
+// ── Trust proxy (required for rate limiting behind Render/Heroku/etc) ─
+// Tells Express to trust X-Forwarded-* headers from the first proxy
+app.set('trust proxy', 1);
+
 // ── Security headers (OWASP baseline) ────────────────────────
 // Sets: X-Content-Type-Options, X-Frame-Options, HSTS, CSP, etc.
 app.use(helmet());
