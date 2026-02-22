@@ -122,6 +122,7 @@ exports.register = async (req, res, next) => {
       email,
       password,
       authProvider:    'local',
+      isVerified:      true, // Beta: auto-verify (email verification disabled)
       // Legal consent recorded at time of registration
       termsAccepted:   true,
       termsAcceptedAt: new Date(),
@@ -134,15 +135,15 @@ exports.register = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Registration failed. Please try again.' });
     }
 
-    // Send verification email (async — does not block response)
-    sendVerificationEmail(user).catch((err) => {
-      console.error('[Register] Failed to queue verification email:', err.message);
-    });
+    // Beta: Email verification disabled — users auto-verified at registration
+    // TODO: Re-enable for production:
+    // sendVerificationEmail(user).catch((err) => {
+    //   console.error('[Register] Failed to queue verification email:', err.message);
+    // });
 
     return res.status(201).json({
       success: true,
-      message: 'Account created. Please check your email to verify your account.',
-      requireVerification: true,
+      message: 'Account created successfully.',
     });
   } catch (err) {
     next(err);
@@ -181,15 +182,16 @@ exports.login = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials.' });
     }
 
-    // Block unverified users — must confirm email before accessing account
-    if (!user.isVerified) {
-      return res.status(403).json({
-        success: false,
-        message: 'Please verify your email before logging in. Check your inbox for the verification link.',
-        needsVerification: true,
-        email: user.email,
-      });
-    }
+    // Beta: Email verification disabled — skip isVerified check
+    // TODO: Re-enable for production:
+    // if (!user.isVerified) {
+    //   return res.status(403).json({
+    //     success: false,
+    //     message: 'Please verify your email before logging in.',
+    //     needsVerification: true,
+    //     email: user.email,
+    //   });
+    // }
 
     return sendTokenResponse(res, user, 'Login successful.');
   } catch (err) {
