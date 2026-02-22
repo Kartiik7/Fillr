@@ -721,3 +721,193 @@ ul { list-style: none; }
   .cta-inner h2 { font-size: 1.5rem; }
   .cta-inner { padding: 52px 0; }
 }
+
+/* ========================================
+   INSTALL EXTENSION SECTION
+   ======================================== */
+.install-hdr {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto 40px;
+}
+.install-hdr .sec-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.beta-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+/* Download button */
+.install-download {
+  text-align: center;
+  margin-bottom: 48px;
+}
+.btn--lg {
+  padding: 16px 32px;
+  font-size: 1rem;
+}
+.btn--lg svg {
+  width: 20px;
+  height: 20px;
+}
+.install-version {
+  display: block;
+  margin-top: 12px;
+  font-size: 0.75rem;
+  font-family: var(--mono);
+  color: var(--muted);
+}
+
+/* Installation steps */
+.install-steps {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-bottom: 56px;
+}
+.install-step {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px 20px;
+  text-align: center;
+  position: relative;
+}
+.install-step::after {
+  content: '→';
+  position: absolute;
+  right: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.1rem;
+  color: var(--muted);
+  z-index: 1;
+}
+.install-step:last-child::after {
+  display: none;
+}
+.install-step-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+}
+.install-step-body h4 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--dark);
+  margin-bottom: 6px;
+}
+.install-step-body p {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.install-step-body code {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--blue);
+}
+
+/* Trust section */
+.install-trust {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 32px;
+}
+.install-trust-title {
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--dark);
+  margin-bottom: 24px;
+}
+.install-trust-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+.trust-item {
+  text-align: center;
+}
+.trust-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(37,99,235,0.08) 0%, rgba(124,58,237,0.08) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+}
+.trust-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke: var(--blue);
+}
+.trust-item h5 {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--dark);
+  margin-bottom: 4px;
+}
+.trust-item p {
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+/* Responsive: Install section */
+@media (max-width: 900px) {
+  .install-steps {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .install-step {
+    display: flex;
+    align-items: flex-start;
+    text-align: left;
+    gap: 16px;
+    padding: 20px;
+  }
+  .install-step::after {
+    display: none;
+  }
+  .install-step-num {
+    margin: 0;
+    flex-shrink: 0;
+  }
+  .install-trust-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .install-trust-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .install-trust {
+    padding: 24px 20px;
+  }
+}
