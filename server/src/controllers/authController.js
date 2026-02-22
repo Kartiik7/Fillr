@@ -22,6 +22,7 @@ const jwt  = require('jsonwebtoken');
 const Joi  = require('joi');
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
+const { sendVerificationEmail } = require('./verificationController');
 
 // ── Google OAuth client ───────────────────────────────────────
 // GOOGLE_CLIENT_ID must be set in environment — used to verify token audience.
@@ -58,10 +59,10 @@ const loginSchema = Joi.object({
 
 const googleSchema = Joi.object({
   credential: Joi.string().min(1).max(4096).required(),
-  termsAccepted: Joi.boolean().valid(true).required().messages({
-    'any.only': 'You must accept the Terms & Conditions and Privacy Policy.',
-    'any.required': 'You must accept the Terms & Conditions and Privacy Policy.',
-  }),
+  // termsAccepted is required for new Google users (first login creates account).
+  // For existing Google users, it's optional — they already accepted during first login.
+  // The controller enforces this: if user is new, termsAccepted must be true.
+  termsAccepted: Joi.boolean().optional(),
 });
 
 // ── Unified JWT generator ─────────────────────────────────────
@@ -133,7 +134,16 @@ exports.register = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Registration failed. Please try again.' });
     }
 
-    return res.status(201).json({ success: true, message: 'Account created successfully.' });
+    // Send verification email (async — does not block response)
+    sendVerificationEmail(user).catch((err) => {
+      console.error('[Register] Failed to queue verification email:', err.message);
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Account created. Please check your email to verify your account.',
+      requireVerification: true,
+    });
   } catch (err) {
     next(err);
   }
@@ -169,6 +179,16 @@ exports.login = async (req, res, next) => {
     if (!user || !(await user.matchPassword(password))) {
       // Same response for wrong email AND wrong password — prevents enumeration
       return res.status(401).json({ success: false, message: 'Invalid credentials.' });
+    }
+
+    // Block unverified users — must confirm email before accessing account
+    if (!user.isVerified) {
+      return res.status(403).json({
+        success: false,
+        message: 'Please verify your email before logging in. Check your inbox for the verification link.',
+        needsVerification: true,
+        email: user.email,
+      });
     }
 
     return sendTokenResponse(res, user, 'Login successful.');
@@ -239,6 +259,7 @@ exports.googleLogin = async (req, res, next) => {
         // Link Google to existing local account
         user.googleId    = googleId;
         user.displayName = name || user.displayName;
+        user.isVerified  = true; // Google verified their email — trust it
         // Keep authProvider as 'local' if they already had a password —
         // this allows both login methods for the same account.
         if (!user.password) {
@@ -246,12 +267,23 @@ exports.googleLogin = async (req, res, next) => {
         }
         await user.save();
       } else {
+        // NEW user — terms consent is REQUIRED for account creation
+        if (!value.termsAccepted) {
+          return res.status(400).json({
+            success: false,
+            message: 'You must accept the Terms & Conditions and Privacy Policy to create an account.',
+            requireTerms: true, // Signal to frontend to show consent UI
+          });
+        }
+
         // Create new Google OAuth user — no password required
+        // isVerified: true — Google already verified their email
         user = await User.create({
           email: email.toLowerCase(),
           authProvider:    'google',
           googleId,
           displayName:     name || '',
+          isVerified:      true,
           termsAccepted:   true,
           termsAcceptedAt: new Date(),
           termsVersion:    '1.0',

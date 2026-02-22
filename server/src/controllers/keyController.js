@@ -33,6 +33,9 @@ const User = require('../models/User');
 const ExtensionKey = require('../models/ExtensionKey');
 const { generateToken } = require('./authController');
 
+// SHA-256 helper for fast key lookup (NOT a replacement for bcrypt storage)
+const lookupHashOf = (key) => crypto.createHash('sha256').update(key).digest('hex');
+
 // ── Input schemas ─────────────────────────────────────────────
 const generateSchema = Joi.object({
   password:   Joi.string().min(1).max(128).required(),
@@ -109,6 +112,7 @@ exports.generateKey = async (req, res, next) => {
       userId: user._id,
       keyId,
       hashedKey,
+      lookupHash: lookupHashOf(rawKey),
       deviceName,
       expiresAt,
     });
@@ -185,6 +189,7 @@ exports.rotateKey = async (req, res, next) => {
       userId: user._id,
       keyId: newKeyId,
       hashedKey,
+      lookupHash: lookupHashOf(rawKey),
       deviceName,
       expiresAt,
     });
@@ -271,22 +276,40 @@ exports.extensionAuth = async (req, res, next) => {
 
     const { apiKey } = value;
 
-    // Fetch all active, non-expired keys — we must compare against each
-    // This is O(n) with bcrypt but n is capped at MAX_KEYS_PER_USER (5)
     const now = new Date();
-    const activeKeys = await ExtensionKey.find({
+
+    // ── Fast path: O(1) lookup via SHA-256 hash (new keys have lookupHash) ──
+    const hash = lookupHashOf(apiKey);
+    let matchedKey = null;
+
+    const candidate = await ExtensionKey.findOne({
+      lookupHash: hash,
       isActive: true,
       expiresAt: { $gt: now },
     }).select('userId hashedKey keyId');
 
-    let matchedKey = null;
+    if (candidate) {
+      // Verify with bcrypt (protects against SHA-256 collision / DB dump)
+      const isMatch = await bcrypt.compare(apiKey, candidate.hashedKey);
+      if (isMatch) matchedKey = candidate;
+    }
 
-    for (const key of activeKeys) {
-      // bcrypt.compare is constant-time for same hash — resistant to timing attacks
-      const isMatch = await bcrypt.compare(apiKey, key.hashedKey);
-      if (isMatch) {
-        matchedKey = key;
-        break;
+    // ── Fallback: legacy keys without lookupHash (O(n) scan, n ≤ 5 per user) ──
+    if (!matchedKey) {
+      const legacyKeys = await ExtensionKey.find({
+        lookupHash: null,
+        isActive: true,
+        expiresAt: { $gt: now },
+      }).select('userId hashedKey keyId');
+
+      for (const key of legacyKeys) {
+        const isMatch = await bcrypt.compare(apiKey, key.hashedKey);
+        if (isMatch) {
+          matchedKey = key;
+          // Backfill lookupHash for future O(1) lookups
+          ExtensionKey.updateOne({ _id: key._id }, { lookupHash: hash }).catch(() => {});
+          break;
+        }
       }
     }
 
