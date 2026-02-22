@@ -869,26 +869,32 @@ const isNumericValue = (value) => {
 const formatDateValue = (value, inputType) => {
   if (!value) return '';
   
-  // If already in ISO format (YYYY-MM-DD), use as-is for date inputs
+  let date;
+  
+  // If already in ISO format (YYYY-MM-DD), parse it
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return value;
+    const [year, month, day] = value.split('-');
+    date = new Date(year, month - 1, day);
+  } else {
+    // Try to parse other formats
+    date = new Date(value);
   }
   
-  // Try to parse and format
-  const date = new Date(value);
   if (isNaN(date.getTime())) {
     return value; // Return as-is if not a valid date
   }
   
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  
   if (inputType === 'date') {
-    // Format as YYYY-MM-DD for date inputs
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    // Format as YYYY-MM-DD for HTML5 date inputs
     return `${year}-${month}-${day}`;
   }
   
-  return value;
+  // Format as DD/MM/YYYY for text inputs
+  return `${day}/${month}/${year}`;
 };
 
 const fillField = (element, value, fieldConfig) => {
@@ -909,7 +915,7 @@ const fillField = (element, value, fieldConfig) => {
   }
 
   // DATE HANDLING: Format date values appropriately
-  if (fieldConfig?.isDate && inputType === 'date') {
+  if (fieldConfig?.isDate) {
     const formattedDate = formatDateValue(value, inputType);
     if (formattedDate) {
       element.value = formattedDate;
