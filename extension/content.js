@@ -1304,7 +1304,16 @@ const FIELD_MAP = {
  * @returns {*} The value at the path, or undefined if not found
  */
 const getValueByPath = (obj, path) => {
-  return path.split(".").reduce((acc, key) => acc?.[key], obj);
+  const value = path.split(".").reduce((acc, key) => acc?.[key], obj);
+  // Transform boolean values for active_backlog to Yes/No
+  if (path === "academics.active_backlog" && typeof value === "boolean") {
+    return value ? "Yes" : "No";
+  }
+  // Also handle string "true"/"false" for backwards compatibility
+  if (path === "academics.active_backlog" && (value === "true" || value === "false")) {
+    return value === "true" ? "Yes" : "No";
+  }
+  return value;
 };
 
 /**

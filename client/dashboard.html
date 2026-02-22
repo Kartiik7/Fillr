@@ -228,8 +228,8 @@
                 <div class="db-fl">
                   <select class="db-fl-select" id="active_backlog" name="active_backlog" onchange="syncSelectLabel(this)">
                     <option value=""></option>
-                    <option value="true">Yes</option>
-                    <option value="false">No</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
                   </select>
                   <label class="db-fl-label" for="active_backlog">Active Backlog?</label>
                   <div class="db-fl-bar"></div>
@@ -796,7 +796,11 @@
       setValue('graduation_percentage', ac.graduation_percentage);
       setValue('cgpa', ac.cgpa);
       setValue('pg_percentage', ac.pg_percentage);
-      setSelect('active_backlog', ac.active_backlog != null ? String(ac.active_backlog) : '');
+      // Convert boolean/string to Yes/No for display
+      const backlogVal = ac.active_backlog === true || ac.active_backlog === 'true' ? 'Yes' : 
+                         ac.active_backlog === false || ac.active_backlog === 'false' ? 'No' : 
+                         ac.active_backlog || '';
+      setSelect('active_backlog', backlogVal);
       setSelect('backlog_count', ac.backlog_count != null ? ac.backlog_count : '');
       setSelect('gap_months', ac.gap_months != null ? ac.gap_months : '');
 
@@ -853,7 +857,7 @@
           graduation_percentage: v('graduation_percentage') !== '' ? Number(v('graduation_percentage')) : undefined,
           cgpa: v('cgpa') !== '' ? Number(v('cgpa')) : undefined,
           pg_percentage: v('pg_percentage') !== '' ? Number(v('pg_percentage')) : undefined,
-          active_backlog: v('active_backlog') !== '' ? v('active_backlog') === 'true' : undefined,
+          active_backlog: v('active_backlog') || undefined,
           backlog_count: v('backlog_count') !== '' ? Number(v('backlog_count')) : 0,
           gap_months: v('gap_months') !== '' ? Number(v('gap_months')) : 0
         },
