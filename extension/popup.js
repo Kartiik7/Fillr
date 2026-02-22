@@ -38,6 +38,40 @@ let pendingConfirmationsData = [];
 let currentProfile = null;
 
 /**
+ * Highlight a field on the page by sending message to content script
+ * @param {string} fieldId - The field ID to highlight
+ */
+const highlightFieldOnPage = async (fieldId) => {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    await chrome.tabs.sendMessage(tab.id, {
+      action: 'HIGHLIGHT_FIELD',
+      fieldId: fieldId
+    });
+  } catch (err) {
+    console.error('Failed to highlight field:', err);
+  }
+};
+
+/**
+ * Highlight all pending confirmation fields on the page
+ */
+const highlightAllPendingFields = async () => {
+  if (!pendingConfirmationsData || pendingConfirmationsData.length === 0) return;
+  
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const fieldIds = pendingConfirmationsData.map(conf => conf.fieldId);
+    await chrome.tabs.sendMessage(tab.id, {
+      action: 'HIGHLIGHT_ALL_FIELDS',
+      fieldIds: fieldIds
+    });
+  } catch (err) {
+    console.error('Failed to highlight fields:', err);
+  }
+};
+
+/**
  * Adaptive Memory System - Helper Functions
  */
 
@@ -324,10 +358,16 @@ const displayConfirmations = (confirmations, profile) => {
     confItem.className = 'confirmation-item';
     confItem.innerHTML = `
       <div class="confirmation-field">
-        <label class="confirmation-label">
-          <strong>${esc(conf.labelText)}</strong>
-          <span class="confidence-badge">${(conf.confidence * 100).toFixed(0)}%</span>
-        </label>
+        <div class="confirmation-label-row">
+          <label class="confirmation-label">
+            <strong>${esc(conf.labelText)}</strong>
+            <span class="confidence-badge">${(conf.confidence * 100).toFixed(0)}%</span>
+          </label>
+          <button class="btn-show-field" data-field-id="${conf.fieldId}" title="Scroll to this field">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            Show
+          </button>
+        </div>
         <select class="confirmation-select" data-field-id="${conf.fieldId}">
           <option value="">-- Skip this field --</option>
           ${fieldKeys.map(key => `
@@ -339,6 +379,11 @@ const displayConfirmations = (confirmations, profile) => {
       </div>
     `;
     confirmationsContent.appendChild(confItem);
+  });
+  
+  // Add event listeners for show buttons
+  confirmationsContent.querySelectorAll('.btn-show-field').forEach(btn => {
+    btn.addEventListener('click', () => highlightFieldOnPage(btn.dataset.fieldId));
   });
   
   confirmationsSection.style.display = 'block';
@@ -610,6 +655,7 @@ const init = () => {
   applyConfirmationsBtn.addEventListener('click', handleApplyConfirmations);
   document.getElementById('clearMemoryBtn').addEventListener('click', handleClearMemory);
   document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+  document.getElementById('showAllFieldsBtn').addEventListener('click', highlightAllPendingFields);
 };
 
 // Initialize when DOM is ready

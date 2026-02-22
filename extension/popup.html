@@ -63,8 +63,14 @@
 
       <!-- ── Confirmations ─────────────────────────── -->
       <section class="card confirmations-section" id="confirmationsSection" style="display:none;">
-        <div class="card-label warn">⚠ Confirm Matches</div>
-        <p class="hint">These fields have medium confidence — please verify:</p>
+        <div class="confirmations-header">
+          <div class="card-label warn">⚠ Confirm Matches</div>
+          <button id="showAllFieldsBtn" class="btn btn-ghost btn-xs" title="Highlight all pending fields on page">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Show All
+          </button>
+        </div>
+        <p class="hint">These fields need verification. Click "Show" to locate them on the page.</p>
         <div id="confirmationsContent" class="confirmations-content"></div>
         <button id="applyConfirmationsBtn" class="btn btn-blue btn-sm btn-full" style="margin-top:10px;">
           Apply Confirmed Autofill

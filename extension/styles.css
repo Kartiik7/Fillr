@@ -300,6 +300,21 @@ main { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
   flex-direction: column;
   gap: 6px;
 }
+.confirmations-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.confirmations-header .card-label {
+  margin-bottom: 0;
+}
+.confirmation-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
 .confirmation-label {
   display: flex;
   justify-content: space-between;
@@ -307,6 +322,32 @@ main { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
   font-size: 0.8rem;
   color: var(--text);
   font-weight: 500;
+  flex: 1;
+}
+.btn-show-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--blue);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-show-field:hover {
+  background: var(--blue-soft);
+  border-color: var(--blue);
+}
+.btn-show-field svg {
+  opacity: 0.8;
+}
+.btn-xs {
+  padding: 4px 8px;
+  font-size: 0.68rem;
 }
 .confidence-badge {
   background: #fef3c7;

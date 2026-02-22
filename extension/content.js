@@ -1878,6 +1878,57 @@ const autofillPage = async (profile, domain = null, siteMappings = {}) => {
 };
 
 /**
+ * Highlight an element on the page with a visual flash effect
+ * @param {HTMLElement} element - Element to highlight
+ * @param {boolean} scrollTo - Whether to scroll to the element (default: true)
+ */
+const highlightElement = (element, scrollTo = true) => {
+  if (!element) return;
+  
+  // For Google Forms, find the question container
+  let targetEl = element;
+  if (isGoogleForm) {
+    const questionContainer = element.closest('[role="listitem"]') || 
+                              element.closest('.freebirdFormviewerComponentsQuestionBaseRoot') ||
+                              element;
+    targetEl = questionContainer;
+  }
+  
+  // Scroll into view
+  if (scrollTo) {
+    targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  
+  // Store original styles
+  const originalOutline = targetEl.style.outline;
+  const originalTransition = targetEl.style.transition;
+  const originalBoxShadow = targetEl.style.boxShadow;
+  
+  // Apply highlight effect
+  targetEl.style.transition = 'all 0.3s ease';
+  targetEl.style.outline = '3px solid #f59e0b';
+  targetEl.style.boxShadow = '0 0 20px rgba(245, 158, 11, 0.5)';
+  
+  // Flash animation
+  setTimeout(() => {
+    targetEl.style.outline = '3px solid #fbbf24';
+    targetEl.style.boxShadow = '0 0 30px rgba(251, 191, 36, 0.7)';
+  }, 300);
+  
+  setTimeout(() => {
+    targetEl.style.outline = '3px solid #f59e0b';
+    targetEl.style.boxShadow = '0 0 20px rgba(245, 158, 11, 0.5)';
+  }, 600);
+  
+  // Remove highlight after 2 seconds
+  setTimeout(() => {
+    targetEl.style.outline = originalOutline;
+    targetEl.style.boxShadow = originalBoxShadow;
+    targetEl.style.transition = originalTransition;
+  }, 2000);
+};
+
+/**
  * Message listener for communication with popup
  * Handles async autofill (Google Forms dropdowns require awaited click simulation)
  */
@@ -1885,6 +1936,36 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // PING used by popup to detect if content script is already injected
   if (request.action === "PING") {
     sendResponse({ pong: true });
+    return;
+  }
+
+  // Highlight a single field (scroll to it and flash highlight)
+  if (request.action === "HIGHLIGHT_FIELD") {
+    const element = elementRegistry.get(request.fieldId);
+    if (element && document.contains(element)) {
+      highlightElement(element);
+      sendResponse({ success: true });
+    } else {
+      sendResponse({ success: false, error: "Field not found" });
+    }
+    return;
+  }
+
+  // Highlight all pending fields
+  if (request.action === "HIGHLIGHT_ALL_FIELDS") {
+    let highlighted = 0;
+    const firstElement = elementRegistry.get(request.fieldIds[0]);
+    
+    request.fieldIds.forEach((fieldId, index) => {
+      const element = elementRegistry.get(fieldId);
+      if (element && document.contains(element)) {
+        // Stagger the highlights slightly
+        setTimeout(() => highlightElement(element, index === 0), index * 100);
+        highlighted++;
+      }
+    });
+    
+    sendResponse({ success: true, highlighted });
     return;
   }
 
