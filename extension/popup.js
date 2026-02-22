@@ -33,6 +33,39 @@ const esc = (str) => {
   return el.innerHTML;
 };
 
+/**
+ * Show toast notification (replaces alert() for better UX)
+ * @param {string} message - Message to display
+ * @param {string} type - 'success', 'error', or 'warn'
+ * @param {number} duration - Duration in ms (default: 3000)
+ */
+const showToast = (message, type = 'success', duration = 3000) => {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.className = `toast ${type} show`;
+  
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => {
+    toast.className = 'toast';
+  }, duration);
+};
+
+/**
+ * Show/hide pending confirmations banner
+ * @param {number} count - Number of pending confirmations
+ */
+const updatePendingBanner = (count) => {
+  const banner = document.getElementById('pendingBanner');
+  const countEl = document.getElementById('pendingCount');
+  
+  if (count > 0) {
+    countEl.textContent = `${count} field${count > 1 ? 's' : ''} need review ↓`;
+    banner.style.display = 'flex';
+  } else {
+    banner.style.display = 'none';
+  }
+};
+
 // Store pending confirmations and profile globally
 let pendingConfirmationsData = [];
 let currentProfile = null;
@@ -262,7 +295,7 @@ const handleScanPage = async () => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     
     if (!tab) {
-      alert('No active tab found');
+      showToast('No active tab found', 'error');
       return;
     }
 
@@ -274,12 +307,12 @@ const handleScanPage = async () => {
     if (response && response.success) {
       displayResults(response);
     } else {
-      alert('Failed to scan page. Make sure you are on a supported page.');
+      showToast('Failed to scan page', 'error');
     }
     
   } catch (error) {
     console.error('[Popup] Error scanning page:', error);
-    alert(`Error: ${error.message}\n\nMake sure you're on a valid web page.`);
+    showToast('Make sure you\'re on a valid web page', 'error');
   } finally {
     // Re-enable button
     scanBtn.disabled = false;
@@ -294,13 +327,13 @@ const handleSaveToken = async () => {
   const key = tokenInput.value.trim();
   
   if (!key) {
-    alert('Please paste your extension secret key');
+    showToast('Please paste your secret key', 'warn');
     return;
   }
 
   // Soft-launch keys use fillr_XXXXXX-XXXXXX-XXXXXX format (~25 chars)
   if (key.length < 10) {
-    alert('Invalid key format. Please paste the full key from your dashboard.');
+    showToast('Invalid key format', 'error');
     return;
   }
   
@@ -312,13 +345,13 @@ const handleSaveToken = async () => {
     
     if (result && result.success) {
       tokenInput.value = '';
-      alert('✅ Connected successfully! Your extension is now authenticated.');
+      showToast('✅ Connected successfully!', 'success');
       updateLoginStatus();
     } else {
-      alert(`❌ Connection failed: ${result?.message || 'Invalid or expired key.'}`);
+      showToast(result?.message || 'Invalid or expired key', 'error');
     }
   } catch (error) {
-    alert(`Failed to connect: ${error.message}`);
+    showToast('Failed to connect', 'error');
   } finally {
     saveTokenBtn.disabled = false;
     saveTokenBtn.textContent = 'Connect';
@@ -333,6 +366,7 @@ const handleSaveToken = async () => {
 const displayConfirmations = (confirmations, profile) => {
   if (!confirmations || confirmations.length === 0) {
     confirmationsSection.style.display = 'none';
+    updatePendingBanner(0);
     return;
   }
   
@@ -387,6 +421,9 @@ const displayConfirmations = (confirmations, profile) => {
   });
   
   confirmationsSection.style.display = 'block';
+  
+  // Show banner to notify user about pending confirmations
+  updatePendingBanner(confirmations.length);
 };
 
 /**
@@ -428,7 +465,7 @@ const handleApplyConfirmations = async () => {
     });
     
     if (confirmations.length === 0) {
-      alert('No fields selected for confirmation');
+      showToast('No fields selected', 'warn');
       return;
     }
     
@@ -441,8 +478,9 @@ const handleApplyConfirmations = async () => {
     });
     
     if (response && response.status === 'confirmed') {
-      alert(`✅ Confirmed ${response.confirmedCount} field(s)!`);
+      showToast(`✅ Confirmed ${response.confirmedCount} field(s)!`, 'success');
       confirmationsSection.style.display = 'none';
+      updatePendingBanner(0);
       pendingConfirmationsData = [];
       // Refresh learned mappings display
       displayLearnedMappings();
@@ -450,7 +488,7 @@ const handleApplyConfirmations = async () => {
     
   } catch (error) {
     console.error('[Popup] Error applying confirmations:', error);
-    alert(`Error: ${error.message}`);
+    showToast(error.message, 'error');
   } finally {
     applyConfirmationsBtn.disabled = false;
     applyConfirmationsBtn.textContent = 'Apply Confirmed Autofill';
@@ -471,7 +509,7 @@ const handleAutofillPage = async () => {
     const token = await getToken();
     
     if (!token) {
-      alert('❌ Not Logged In\n\nPlease paste your secret key and click "Connect" first.');
+      showToast('Please connect first', 'warn');
       return;
     }
     
@@ -480,7 +518,7 @@ const handleAutofillPage = async () => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     
     if (!tab) {
-      alert('No active tab found');
+      showToast('No active tab found', 'error');
       return;
     }
 
@@ -507,28 +545,24 @@ const handleAutofillPage = async () => {
         displayConfirmations(pendingConfirmations, profileData);
       }
       
-      // Show success message
-      let message = `✅ Autofill Complete!\n\n`;
-      message += `Auto-filled: ${autoFilledCount} field(s)\n`;
-      
+      // Show success toast
       if (pendingConfirmations && pendingConfirmations.length > 0) {
-        message += `Pending confirmation: ${pendingConfirmations.length} field(s)\n\n`;
-        message += `Please review and confirm the pending fields below.`;
+        showToast(`✅ Filled ${autoFilledCount} | ${pendingConfirmations.length} need review ↓`, 'warn', 4000);
+      } else {
+        showToast(`✅ Autofilled ${autoFilledCount} field(s)!`, 'success');
       }
-      
-      alert(message);
     } else {
       console.error('[Popup] Invalid response from content script');
-      alert('Failed to autofill page. Check console for details.');
+      showToast('Failed to autofill page', 'error');
     }
     
   } catch (error) {
     console.error('[Popup] Error autofilling page:', error);
     
     if (error.message.includes('Session expired')) {
-      alert(`❌ ${error.message}\n\nPlease get a new token from the website.`);
+      showToast('Session expired. Reconnect please.', 'error');
     } else {
-      alert(`Error: ${error.message}\n\nMake sure the backend server is running.`);
+      showToast('Server unreachable', 'error');
     }
   } finally {
     // Re-enable button
@@ -615,14 +649,14 @@ const handleClearMemory = async () => {
   const domain = await getCurrentDomain();
   
   if (!domain) {
-    alert('Cannot determine current domain');
+    showToast('Cannot determine domain', 'error');
     return;
   }
   
-  if (confirm(`Clear all learned mappings for ${domain}?`)) {
+  if (confirm(`Clear learned mappings for ${domain}?`)) {
     await clearSiteMemory(domain);
     displayLearnedMappings();
-    alert('✅ Memory cleared for this site');
+    showToast('Memory cleared', 'success');
   }
 };
 
@@ -630,11 +664,18 @@ const handleClearMemory = async () => {
  * Handle logout / disconnect
  */
 const handleLogout = () => {
-  if (!confirm('Disconnect extension? You will need to re-enter your key.')) return;
+  if (!confirm('Disconnect extension?')) return;
   chrome.runtime.sendMessage({ type: 'CLEAR_TOKEN' }, () => {
     updateLoginStatus();
-    alert('✅ Disconnected.');
+    showToast('Disconnected', 'success');
   });
+};
+
+/**
+ * Scroll to pending confirmations section
+ */
+const scrollToConfirmations = () => {
+  confirmationsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 
 /**
@@ -656,6 +697,7 @@ const init = () => {
   document.getElementById('clearMemoryBtn').addEventListener('click', handleClearMemory);
   document.getElementById('logoutBtn').addEventListener('click', handleLogout);
   document.getElementById('showAllFieldsBtn').addEventListener('click', highlightAllPendingFields);
+  document.getElementById('pendingBanner').addEventListener('click', scrollToConfirmations);
 };
 
 // Initialize when DOM is ready

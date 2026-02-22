@@ -349,6 +349,75 @@ main { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
   padding: 4px 8px;
   font-size: 0.68rem;
 }
+
+/* ── Toast Notification ────────────────────────── */
+.toast {
+  position: fixed;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 1000;
+  transition: top 0.3s ease;
+  max-width: 280px;
+  text-align: center;
+}
+.toast.show {
+  top: 8px;
+}
+.toast.success {
+  background: #d1fae5;
+  border-color: #10b981;
+  color: #065f46;
+}
+.toast.error {
+  background: #fee2e2;
+  border-color: #ef4444;
+  color: #991b1b;
+}
+.toast.warn {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  color: #92400e;
+}
+
+/* ── Pending Confirmations Banner ──────────────── */
+.pending-banner {
+  position: sticky;
+  top: 0;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-bottom: 2px solid #f59e0b;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  z-index: 100;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #92400e;
+  transition: all 0.2s ease;
+}
+.pending-banner:hover {
+  background: linear-gradient(135deg, #fde68a, #fcd34d);
+}
+.pending-icon {
+  font-size: 0.9rem;
+}
+.pending-arrow {
+  animation: bounce 1s infinite;
+}
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(3px); }
+}
 .confidence-badge {
   background: #fef3c7;
   color: #92400e;

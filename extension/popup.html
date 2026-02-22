@@ -10,6 +10,16 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
+  
+  <!-- Pending Confirmations Banner (appears when needed) -->
+  <div id="pendingBanner" class="pending-banner" style="display:none;">
+    <span class="pending-icon">⚠</span>
+    <span id="pendingCount">0 fields need review</span>
+    <span class="pending-arrow">↓</span>
+  </div>
+  
   <div class="container">
 
     <!-- ── Header ──────────────────────────────────── -->
