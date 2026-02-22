@@ -15,6 +15,7 @@ const rateLimit = require('express-rate-limit');
 const authController  = require('../controllers/authController');
 const keyController   = require('../controllers/keyController');
 const resetController = require('../controllers/resetController');
+const verificationController = require('../controllers/verificationController');
 
 const router = express.Router();
 
@@ -70,5 +71,18 @@ const resetLimiter = rateLimit({
 });
 router.post('/forgot-password', forgotLimiter, resetController.forgotPassword);
 router.post('/reset-password',  resetLimiter,  resetController.resetPassword);
+
+// ── Email verification ────────────────────────────────────────
+// verify:  GET — user clicks link in email, token in query param
+// resend:  POST — user requests new verification email
+const verifyLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many verification requests. Please try again later.' },
+});
+router.get('/verify-email',           verificationController.verifyEmail);
+router.post('/resend-verification', verifyLimiter, verificationController.resendVerification);
 
 module.exports = router;
