@@ -29,15 +29,11 @@
       <div class="success-overlay" id="successOverlay">
         <div class="success-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-            <polyline points="22,6 12,13 2,6"/>
+            <polyline points="20 6 9 17 4 12"/>
           </svg>
         </div>
-        <h3>Check your email!</h3>
-        <p>We sent a verification link to <strong id="registeredEmail"></strong>.</p>
-        <p style="font-size:.875rem;color:var(--text-muted,#94a3b8);margin-top:.5rem;">Click the link in the email to activate your account, then <a href="login.html">log in</a>.</p>
-        <button type="button" class="btn btn-ghost" id="resendVerifyBtn" style="margin-top:1rem;font-size:.875rem;">Didn&rsquo;t get it? Resend</button>
-        <p id="resendVerifyStatus" style="font-size:.825rem;margin-top:.5rem;display:none;"></p>
+        <h3>Account created!</h3>
+        <p>Redirecting to login&hellip;</p>
       </div>
 
       <div class="auth-card-head">
@@ -319,9 +315,8 @@
         });
 
         if (result.data && result.data.success) {
-          document.getElementById('registeredEmail').textContent = email;
           document.getElementById('successOverlay').classList.add('show');
-          setupResendBtn(email);
+          setTimeout(() => { window.location.href = 'login.html'; }, 1500);
         } else {
           showError(result.data?.message || 'Registration failed. Please try again.');
         }
@@ -343,6 +338,18 @@
 
     // ── Google OAuth ──────────────────────────────────────────
     const GOOGLE_CLIENT_ID = ENV.GOOGLE_CLIENT_ID || '';
+    let googleInitialized = false;
+
+    function initGoogleIfNeeded() {
+      if (googleInitialized || !window.google) return false;
+      if (!GOOGLE_CLIENT_ID) return false;
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleCredentialResponse,
+      });
+      googleInitialized = true;
+      return true;
+    }
 
     function handleGoogleCredentialResponse(response) {
       if (!response.credential) return;
@@ -355,9 +362,9 @@
         termsAccepted: true,
       }).then(result => {
         if (result.data && result.data.success) {
-          document.getElementById('registeredEmail').textContent = '';
+          localStorage.setItem('token', result.data.token);
           document.getElementById('successOverlay').classList.add('show');
-          setupResendBtn('');
+          setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
         } else {
           showError(result.data?.message || 'Google sign-up failed.');
         }
@@ -369,12 +376,8 @@
       });
     }
 
-    if (GOOGLE_CLIENT_ID && window.google) {
-      google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogleCredentialResponse,
-      });
-    }
+    // Try early init (may fail if script not loaded yet — that's ok)
+    initGoogleIfNeeded();
 
     document.getElementById('googleBtn').addEventListener('click', () => {
       // Google signup also requires terms acceptance
@@ -394,8 +397,13 @@
         showError('Google Sign-In is not configured yet.');
         return;
       }
-      if (window.google) {
-        google.accounts.id.prompt();
+      if (!window.google) {
+        showError('Google Sign-In failed to load. Please try again.');
+        return;
+      }
+      // Lazy init if not done yet (handles async script load)
+      initGoogleIfNeeded();
+      google.accounts.id.prompt();
       } else {
         showError('Google Sign-In failed to load. Please try again.');
       }

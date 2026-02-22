@@ -202,8 +202,6 @@
           localStorage.setItem('token', result.data.token);
           document.getElementById('successOverlay').classList.add('show');
           setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
-        } else if (result.data && result.data.needsVerification) {
-          showError('Please verify your email before logging in. Check your inbox for the verification link.');
         } else {
           showError(result.data?.message || 'Invalid credentials. Please try again.');
         }
@@ -218,8 +216,20 @@
     // ── Google OAuth ──────────────────────────────────────────
     // GOOGLE_CLIENT_ID must match GOOGLE_CLIENT_ID on the backend.
     // The credential (ID token) is sent to POST /api/auth/google for
-    // server-side verification — we NEVER trust it on the frontend alone.
+    // server-side verification before issuing a JWT.
     const GOOGLE_CLIENT_ID = ENV.GOOGLE_CLIENT_ID || '';
+    let googleInitialized = false;
+
+    function initGoogleIfNeeded() {
+      if (googleInitialized || !window.google) return false;
+      if (!GOOGLE_CLIENT_ID) return false;
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleCredentialResponse,
+      });
+      googleInitialized = true;
+      return true;
+    }
 
     function handleGoogleCredentialResponse(response) {
       if (!response.credential) return;
@@ -258,13 +268,8 @@
       doGoogleLogin(false); // First attempt without terms — existing users pass, new users get requireTerms
     }
 
-    // Initialize Google Identity Services
-    if (GOOGLE_CLIENT_ID && window.google) {
-      google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogleCredentialResponse,
-      });
-    }
+    // Try early init (may fail if script not loaded yet — that's ok)
+    initGoogleIfNeeded();
 
     // Custom Google button click triggers popup
     document.getElementById('googleBtn').addEventListener('click', () => {
@@ -272,11 +277,13 @@
         showError('Google Sign-In is not configured yet.');
         return;
       }
-      if (window.google) {
-        google.accounts.id.prompt();
-      } else {
+      if (!window.google) {
         showError('Google Sign-In failed to load. Please try again.');
+        return;
       }
+      // Lazy init if not done yet (handles async script load)
+      initGoogleIfNeeded();
+      google.accounts.id.prompt();
     });
   </script>
 </body>
