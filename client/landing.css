@@ -672,9 +672,10 @@ ul { list-style: none; }
    RESPONSIVE
    ===================== */
 @media (max-width: 960px) {
-  .hero .container { grid-template-columns: 1fr; }
+  .hero .container { grid-template-columns: 1fr; gap: 32px; }
   .hero h1 { font-size: 2rem; }
-  .browser { max-width: 520px; }
+  .hero-visual { order: -1; margin-bottom: 0; }
+  .browser { max-width: 520px; margin: 0 auto; }
   .feat-grid { grid-template-columns: repeat(2, 1fr); }
   .feat-cell:nth-child(3)  { border-right: 1px solid var(--border); }
   .feat-cell:nth-child(2)  { border-right: none; }
@@ -689,16 +690,54 @@ ul { list-style: none; }
   .arch-arrow { flex-direction: row; padding: 8px 0; }
   .arch-arrow span { display: none; }
 }
+/* Stack browser mockup cards on narrow screens */
+@media (max-width: 520px) {
+  .browser-body { 
+    grid-template-columns: 1fr; 
+    gap: 12px; 
+  }
+  .ext-panel { order: -1; }
+}
 @media (max-width: 640px) {
-  .sec { padding: 52px 0; }
-  .hero { padding: 48px 0 40px; }
-  .hero h1 { font-size: 1.7rem; }
-  .hero-actions { flex-direction: column; }
-  .btn { width: 100%; justify-content: center; }
+  html { font-size: 15px; }
+  .container { padding: 0 16px; }
+  .sec { padding: 44px 0; }
+  .sec-title { font-size: 1.35rem; }
+  .sec-sub { font-size: 0.88rem; }
+  
+  .hero { padding: 36px 0 32px; }
+  .hero h1 { font-size: 1.5rem; line-height: 1.25; }
+  .hero h1 br { display: none; }
+  .hero-desc { font-size: 0.88rem; line-height: 1.6; max-width: 100%; margin-bottom: 24px; }
+  .hero-eyebrow { font-size: 0.65rem; padding: 3px 10px; margin-bottom: 16px; }
+  .hero-actions { flex-direction: column; gap: 10px; }
+  
+  .btn { width: 100%; justify-content: center; padding: 12px 20px; font-size: 0.88rem; }
+  .btn svg { width: 16px; height: 16px; }
+  
+  .browser { max-width: 100%; border-radius: 8px; }
+  .browser-bar { padding: 8px 12px; }
+  .browser-url { font-size: 0.6rem; max-width: 180px; }
+  .browser-body { 
+    grid-template-columns: 1fr; 
+    gap: 12px; 
+    padding: 12px; 
+  }
+  .ext-panel { order: -1; }
+  .gform-title { font-size: 0.85rem; }
+  .gform-sub { font-size: 0.65rem; }
+  .gform-field { padding: 10px 12px; }
+  .gform-field-lbl { font-size: 0.68rem; }
+  .gform-field-val { font-size: 0.75rem; }
+  
   .feat-grid { grid-template-columns: 1fr; }
-  .feat-cell { border-right: none !important; border-bottom: 1px solid var(--border) !important; }
+  .feat-cell { border-right: none !important; border-bottom: 1px solid var(--border) !important; padding: 24px 20px; }
   .feat-cell:last-child { border-bottom: none !important; }
+  .feat-title { font-size: 0.95rem; }
+  .feat-desc { font-size: 0.8rem; }
+  
   .limits-grid { grid-template-columns: 1fr; }
+  
   .nav-links { display: none; }
   .nav-toggle { display: flex; }
   .nav-links.open {
@@ -709,17 +748,32 @@ ul { list-style: none; }
     left: 0; right: 0;
     background: var(--surface);
     border-bottom: 1px solid var(--border);
-    padding: 14px 28px;
+    padding: 14px 16px;
     gap: 4px;
     z-index: 199;
     box-shadow: 0 8px 24px rgba(0,0,0,0.08);
   }
-  .nav-links.open a { width: 100%; text-align: center; border-radius: 6px; }
+  .nav-links.open a { width: 100%; text-align: center; border-radius: 6px; padding: 10px 12px; }
+  .nav-links.open .nav-cta,
+  .nav-links.open .nav-login { margin-top: 8px; }
+  
   .footer .container { flex-direction: column; gap: 10px; text-align: center; }
+  
   .tl-item:nth-child(even) { margin: 0; padding-left: 8px; padding-right: 0; }
-  .sec-title { font-size: 1.45rem; }
-  .cta-inner h2 { font-size: 1.5rem; }
-  .cta-inner { padding: 52px 0; }
+  
+  .cta-inner h2 { font-size: 1.3rem; }
+  .cta-inner p { font-size: 0.85rem; }
+  .cta-inner { padding: 40px 0; }
+}
+
+/* Extra small screens */
+@media (max-width: 380px) {
+  html { font-size: 14px; }
+  .container { padding: 0 12px; }
+  .hero h1 { font-size: 1.35rem; }
+  .hero-eyebrow { font-size: 0.6rem; }
+  .browser-url { display: none; }
+  .browser-dots { margin-right: auto; }
 }
 
 /* ========================================
