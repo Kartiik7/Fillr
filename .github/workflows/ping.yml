@@ -11,4 +11,4 @@ jobs:
     steps:
       - name: Ping Render API
         run: |
-          curl -s -o /dev/null -w "%{http_code}" https://fillr-gqyp.onrender.com/api
+          curl -s -o /dev/null -w "%{http_code}" https://fillr-gqyp.onrender.com/health || echo "Failed to ping Render API"
