@@ -138,7 +138,7 @@
   <script>
     // Redirect if already logged in
     if (localStorage.getItem('token')) {
-      window.location.href = 'dashboard.html';
+      window.location.href = '/dashboard';
     }
 
     // Show success banner when redirected after account deletion
@@ -196,7 +196,7 @@
         if (result.data && result.data.success) {
           localStorage.setItem('token', result.data.token);
           document.getElementById('successOverlay').classList.add('show');
-          setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+          setTimeout(() => { window.location.href = '/dashboard'; }, 1200);
         } else {
           showError(result.data?.message || 'Invalid credentials. Please try again.');
         }
@@ -240,7 +240,7 @@
           if (result.data && result.data.success) {
             localStorage.setItem('token', result.data.token || result.data.accessToken);
             document.getElementById('successOverlay').classList.add('show');
-            setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+            setTimeout(() => { window.location.href = '/dashboard'; }, 1200);
           } else if (result.data?.requireTerms) {
             // New Google user — needs to accept terms first
             if (confirm('To create your Fillr account, you must accept the Terms & Conditions and Privacy Policy.\n\nTerms: https://fillr-placement-autofill.netlify.app/terms.html\nPrivacy: https://fillr-placement-autofill.netlify.app/privacy.html\n\nDo you accept?')) {

@@ -286,7 +286,7 @@
           </div>
           <h5>Dashboard</h5>
           <p>User enters academic + personal profile</p>
-          <span class="arch-badge">client/dashboard.html</span>
+          <span class="arch-badge">/dashboard</span>
         </div>
         <div class="arch-arrow">
           <svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
@@ -625,7 +625,7 @@
 <script>
   // Auto-redirect if already logged in
   if (localStorage.getItem('token')) {
-    window.location.href = 'dashboard.html';
+    window.location.href = '/dashboard';
   }
 
   // Mobile nav toggle
@@ -668,7 +668,7 @@
           break;
         case 'E':
           e.preventDefault();
-          window.location.href = 'dashboard.html';
+          window.location.href = '/dashboard';
           break;
         case '?':
           e.preventDefault();
