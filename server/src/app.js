@@ -96,6 +96,15 @@ const globalLimiter = rateLimit({
 });
 app.use(globalLimiter);
 
+// ── Serve frontend static assets ───────────────────────────
+const path = require('path');
+app.use(express.static(path.join(__dirname, '../../client')));
+
+// expose clean dashboard URL without extension
+app.get('/dashboard', (_req, res) => {
+  res.sendFile(path.join(__dirname, '../../client/dashboard.html'));
+});
+
 // ── Routes ────────────────────────────────────────────────────
 app.use('/api/auth',    authRoutes);
 app.use('/api/profile', profileRoutes);
