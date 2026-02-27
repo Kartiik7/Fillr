@@ -28,8 +28,190 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
+/* Accessibility: Focus states */
+:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 a { color: inherit; text-decoration: none; }
 ul { list-style: none; }
+
+/* ---------- ANIMATIONS & SCROLL EFFECTS ---------- */
+/* Scroll Progress Indicator */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--blue) 0%, #7c3aed 100%);
+  width: 0%;
+  z-index: 1000;
+  transition: width 0.1s ease;
+}
+
+/* Back to Top Button */
+.back-to-top {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 999;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.back-to-top.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.back-to-top:hover {
+  background: var(--blue-dim);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+}
+
+.back-to-top svg {
+  width: 20px;
+  height: 20px;
+  stroke: white;
+}
+
+/* Fade-in Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.6s ease forwards;
+}
+
+/* Loading Spinner Animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(37, 99, 235, 0.3);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 8px;
+}
+
+.browser-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.95);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  border-radius: 6px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.browser-loading.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Keyboard Shortcuts */
+.install-shortcuts {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(124, 58, 237, 0.05) 100%);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 32px;
+  margin-top: 32px;
+}
+
+.shortcuts-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--dark);
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.shortcuts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.shortcut-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: var(--surface);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.shortcut-key {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--blue-soft);
+  color: var(--blue);
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
+.shortcut-desc {
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-align: center;
+}
 
 /* ---------- LAYOUT ---------- */
 .container { width: 100%; max-width: 1140px; margin: 0 auto; padding: 0 28px; }
@@ -101,7 +283,7 @@ ul { list-style: none; }
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 20px;
 }
 .nav-links a {
   font-size: 0.86rem;
@@ -118,11 +300,13 @@ ul { list-style: none; }
   font-weight: 600;
   padding: 7px 18px;
   transition: background 0.15s !important;
+  margin-left: 12px;
 }
 .nav-links .nav-cta:hover { background: var(--blue-dim) !important; }
 .nav-links .nav-login {
   border: 1px solid var(--border);
   color: var(--text) !important;
+  margin-right: 8px;
 }
 .nav-links .nav-login:hover { border-color: #c0cfe0; }
 .nav-toggle {
@@ -413,8 +597,8 @@ ul { list-style: none; }
   border-bottom: 1px solid var(--border);
   position: relative;
   overflow: hidden;
-  cursor: default;
-  transition: background 0.18s;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 .feat-cell:nth-child(3)  { border-right: none; }
 .feat-cell:nth-child(6)  { border-right: none; }
@@ -431,7 +615,11 @@ ul { list-style: none; }
   transform-origin: left;
   transition: transform 0.24s ease;
 }
-.feat-cell:hover { background: var(--blue-soft); }
+.feat-cell:hover { 
+  background: var(--blue-soft);
+  transform: translateY(-4px);
+  border-color: var(--blue-soft);
+}
 .feat-cell:hover::before { transform: scaleX(1); }
 .feat-icon {
   width: 34px; height: 34px;
@@ -777,6 +965,69 @@ ul { list-style: none; }
 }
 
 /* ========================================
+   CHROME WEB STORE CTA SECTION
+   ======================================== */
+.chrome-cta {
+  padding: 56px 0;
+}
+.chrome-cta-inner {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
+}
+.chrome-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--blue);
+  margin-bottom: 16px;
+}
+.badge-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--blue);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.chrome-cta-inner h2 {
+  font-size: 1.75rem;
+  font-weight: 750;
+  color: var(--dark);
+  margin-bottom: 12px;
+  line-height: 1.22;
+}
+.chrome-cta-inner > p:nth-of-type(1) {
+  font-size: 0.95rem;
+  color: var(--muted);
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+.chrome-cta-inner .btn--lg {
+  margin: 0 auto 20px;
+}
+.chrome-cta-alt {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.chrome-cta-alt a {
+  color: var(--blue);
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+.chrome-cta-alt a:hover {
+  opacity: 0.8;
+}
+
+/* ========================================
    INSTALL EXTENSION SECTION
    ======================================== */
 .install-hdr {
@@ -963,5 +1214,14 @@ ul { list-style: none; }
   }
   .install-trust {
     padding: 24px 20px;
+  }
+  .shortcuts-grid {
+    grid-template-columns: 1fr;
+  }
+  .back-to-top {
+    width: 44px;
+    height: 44px;
+    bottom: 20px;
+    right: 20px;
   }
 }

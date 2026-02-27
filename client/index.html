@@ -14,6 +14,9 @@
 </head>
 <body>
 
+<!-- ======= SCROLL PROGRESS INDICATOR ======= -->
+<div class="scroll-progress"></div>
+
 <!-- ======= NAV ======= -->
 <nav class="nav">
   <div class="container">
@@ -70,6 +73,11 @@
           <div class="browser-url">docs.google.com/forms/d/e/placement-drive-2026...</div>
         </div>
         <div class="browser-body">
+          <!-- Loading animation -->
+          <div class="browser-loading">
+            <div class="loading-spinner"></div>
+            <span>Loading extension...</span>
+          </div>
           <div class="gform">
             <div class="gform-header">
               <div class="gform-title">Infosys Campus Placement 2026</div>
@@ -127,6 +135,28 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======= CHROME STORE - CTA ======= -->
+<section class="chrome-cta sec">
+  <div class="container">
+    <div class="chrome-cta-inner">
+      <div class="chrome-badge">
+        <span class="badge-dot"></span>
+        Now Available
+      </div>
+      <h2>Download Fillr from Chrome Web Store</h2>
+      <p>One-click install with automatic updates. No manual setup required.</p>
+      <a href="https://chromewebstore.google.com/detail/fillr-%E2%80%93-placement-form-au/cicemomehhbojaaemfldindpdgpfllmi" class="btn btn--blue btn--lg" target="_blank">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.35-4.35"/>
+        </svg>
+        Install from Chrome Store
+      </a>
+      <p class="chrome-cta-alt"><a href="#install">Or download manually</a> for more control</p>
     </div>
   </div>
 </section>
@@ -422,13 +452,12 @@
   <div class="container">
     <div class="install-hdr">
       <div class="sec-label">
-        <span class="beta-badge">Beta</span>
-        Install Extension
+        <span class="beta-badge">Manual Installation</span>
+        Alternative Downloads
       </div>
-      <h2 class="sec-title">Get Fillr for Chrome</h2>
+      <h2 class="sec-title">Download & Install Manually</h2>
       <p class="sec-sub">
-        Fillr is currently in <strong>beta</strong> and not yet published on the Chrome Web Store.
-        Install it manually using the steps below � takes under 2 minutes.
+        Prefer full control? Download the extension ZIP and load it directly into Chrome. Great for development or if you want to review the code before installing.
       </p>
     </div>
 
@@ -529,10 +558,38 @@
         </div>
       </div>
     </div>
+
+    <!-- Keyboard Shortcuts -->
+    <div class="install-shortcuts">
+      <h4 class="shortcuts-title">⌨️ Keyboard Shortcuts</h4>
+      <div class="shortcuts-grid">
+        <div class="shortcut-item">
+          <span class="shortcut-key">Alt + Shift + F</span>
+          <span class="shortcut-desc">Toggle Fillr panel</span>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-key">Alt + Shift + A</span>
+          <span class="shortcut-desc">Autofill form</span>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-key">Alt + Shift + E</span>
+          <span class="shortcut-desc">Edit profile</span>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-key">Alt + Shift + ?</span>
+          <span class="shortcut-desc">Show help</span>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- ======= 8. CTA ======= -->
+<!-- ======= BACK TO TOP BUTTON ======= -->
+<button id="backToTop" class="back-to-top" title="Back to top">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="18 15 12 9 6 15"></polyline>
+  </svg>
+</button>
 <section class="cta">
   <div class="container">
     <div class="cta-inner">
@@ -570,9 +627,85 @@
   if (localStorage.getItem('token')) {
     window.location.href = 'dashboard.html';
   }
+
   // Mobile nav toggle
   document.getElementById('navToggle').addEventListener('click', () => {
     document.getElementById('navLinks').classList.toggle('open');
+  });
+
+  // Scroll Progress Indicator
+  window.addEventListener('scroll', () => {
+    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const scrolled = window.scrollY;
+    const progress = scrollHeight > 0 ? (scrolled / scrollHeight) * 100 : 0;
+    document.querySelector('.scroll-progress').style.width = progress + '%';
+  });
+
+  // Back to Top Button
+  const backToTopBtn = document.getElementById('backToTop');
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 300) {
+      backToTopBtn.classList.add('show');
+    } else {
+      backToTopBtn.classList.remove('show');
+    }
+  });
+  backToTopBtn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // Keyboard shortcuts listener
+  document.addEventListener('keydown', (e) => {
+    if (e.altKey && e.shiftKey) {
+      switch(e.key) {
+        case 'F':
+          e.preventDefault();
+          console.log('Fillr panel toggled');
+          break;
+        case 'A':
+          e.preventDefault();
+          console.log('Autofill initiated');
+          break;
+        case 'E':
+          e.preventDefault();
+          window.location.href = 'dashboard.html';
+          break;
+        case '?':
+          e.preventDefault();
+          alert('Fillr Shortcuts:\nAlt+Shift+F: Toggle panel\nAlt+Shift+A: Autofill\nAlt+Shift+E: Edit profile\nAlt+Shift+?: Help');
+          break;
+      }
+    }
+  });
+
+  // Smooth scroll animation on page load
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+      const href = this.getAttribute('href');
+      if (href !== '#' && document.querySelector(href)) {
+        e.preventDefault();
+        document.querySelector(href).scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+  });
+
+  // Intersection Observer for fade-in animations
+  const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+  };
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('fade-in');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, observerOptions);
+
+  document.querySelectorAll('.sec, .feat-cell, .tl-item, .trust-item').forEach(el => {
+    observer.observe(el);
   });
 </script>
 </body>
