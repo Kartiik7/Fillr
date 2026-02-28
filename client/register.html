@@ -19,7 +19,7 @@
 
     <!-- Brand -->
     <div class="auth-brand">
-      <a href="index.html">
+      <a href="/">
         Fillr<span class="dot">.</span>
         <span class="tag">Chrome Extension</span>
       </a>
@@ -41,7 +41,7 @@
 
       <div class="auth-card-head">
         <h1>Create your account</h1>
-        <p>Already have an account? <a href="login.html">Sign in</a></p>
+        <p>Already have an account? <a href="/login">Sign in</a></p>
       </div>
 
       <!-- Error banner -->
@@ -145,9 +145,9 @@
           <input type="checkbox" id="termsAccepted" name="termsAccepted">
           <label for="termsAccepted">
             I have read and agree to the
-            <a href="terms.html" target="_blank" rel="noopener">Terms &amp; Conditions</a>
+            <a href="/terms" target="_blank" rel="noopener">Terms &amp; Conditions</a>
             and
-            <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.
+            <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.
             I understand that my personal and academic data will be stored to enable the autofill service.
           </label>
         </div>
@@ -168,13 +168,13 @@
     </div>
 
     <p class="auth-footer">
-      <a href="index.html">&larr; Back to home</a>
+      <a href="/">&larr; Back to home</a>
     </p>
   </div>
 
   <div class="legal-footer-bar">
-    <a href="terms.html">Terms &amp; Conditions</a>
-    <a href="privacy.html">Privacy Policy</a>
+    <a href="/terms">Terms &amp; Conditions</a>
+    <a href="/privacy">Privacy Policy</a>
   </div>
 
   <script src="env.js"></script>
@@ -311,7 +311,7 @@
 
         if (result.data && result.data.success) {
           document.getElementById('successOverlay').classList.add('show');
-          setTimeout(() => { window.location.href = 'login.html'; }, 1500);
+          setTimeout(() => { window.location.href = '/login'; }, 1500);
         } else {
           showError(result.data?.message || 'Registration failed. Please try again.');
         }
