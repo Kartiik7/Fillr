@@ -189,7 +189,7 @@ exports.forgotPassword = async (req, res, next) => {
 
     // Build reset URL (always HTTPS in production)
     const frontendUrl = process.env.FRONTEND_URL || 'https://fillr-placement-autofill.netlify.app';
-    const resetUrl    = `${frontendUrl}/reset-password.html?token=${rawToken}`;
+    const resetUrl    = `${frontendUrl}/reset-password?token=${rawToken}`;
 
     // ── Respond IMMEDIATELY — email is fire-and-forget ──────
     res.json({ success: true, message: GENERIC_MSG });

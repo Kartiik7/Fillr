@@ -109,7 +109,7 @@ exports.sendVerificationEmail = async (user) => {
   await user.save({ validateBeforeSave: false });
 
   const frontendUrl = process.env.FRONTEND_URL || 'https://fillr-placement-autofill.netlify.app';
-  const verifyUrl   = `${frontendUrl}/verify-email.html?token=${rawToken}`;
+  const verifyUrl   = `${frontendUrl}/verify-email?token=${rawToken}`;
 
   // Fire and forget — don't block registration response
   sendVerificationEmailAsync(user.email, verifyUrl).catch((err) => {
@@ -183,7 +183,7 @@ exports.resendVerification = async (req, res, next) => {
     await user.save({ validateBeforeSave: false });
 
     const frontendUrl = process.env.FRONTEND_URL || 'https://fillr-placement-autofill.netlify.app';
-    const verifyUrl   = `${frontendUrl}/verify-email.html?token=${rawToken}`;
+    const verifyUrl   = `${frontendUrl}/verify-email?token=${rawToken}`;
 
     res.json({ success: true, message: GENERIC_MSG });
 

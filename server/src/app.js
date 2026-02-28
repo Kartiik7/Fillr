@@ -98,11 +98,25 @@ app.use(globalLimiter);
 
 // ── Serve frontend static assets ───────────────────────────
 const path = require('path');
-app.use(express.static(path.join(__dirname, '../../client')));
+const fs   = require('fs');
+const CLIENT_DIR = path.join(__dirname, '../../client');
+app.use(express.static(CLIENT_DIR));
 
 // expose clean dashboard URL without extension
 app.get('/dashboard', (_req, res) => {
-  res.sendFile(path.join(__dirname, '../../client/dashboard.html'));
+  res.sendFile(path.join(CLIENT_DIR, 'dashboard.html'));
+});
+
+// generic handler for other top-level pages (login, register, etc.)
+app.get('/:page', (req, res, next) => {
+  const page = req.params.page;
+  // avoid interfering with API routes
+  if (page.startsWith('api')) return next();
+  const file = path.join(CLIENT_DIR, `${page}.html`);
+  fs.access(file, fs.constants.F_OK, (err) => {
+    if (err) return next(); // not found, continue to next handler
+    res.sendFile(file);
+  });
 });
 
 // ── Routes ────────────────────────────────────────────────────
